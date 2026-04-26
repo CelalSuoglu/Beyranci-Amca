@@ -21,11 +21,15 @@ function CategoryHeading({ title }: { title: string }) {
 function MenuCard({
   name,
   price,
+  options,
   description,
+  descriptionList,
 }: {
   name: string;
-  price: string;
+  price?: string;
+  options?: { name: string; price: string }[];
   description?: string;
+  descriptionList?: string[];
 }) {
   return (
     <article
@@ -39,11 +43,40 @@ function MenuCard({
         <h4 className="min-w-0 flex-1 font-[family-name:var(--font-display)] text-lg font-semibold leading-snug text-[var(--foreground)] transition-colors group-hover:text-[#fde68a] sm:text-xl">
           {name}
         </h4>
-        <p className="shrink-0 font-semibold tabular-nums tracking-tight text-[#e8c76a] sm:pt-0.5 sm:text-right">
-          {price}
-        </p>
+        {price ? (
+          <p className="shrink-0 font-semibold tabular-nums tracking-tight text-[#e8c76a] sm:pt-0.5 sm:text-right">
+            {price}
+          </p>
+        ) : null}
       </div>
-      {description ? (
+      {options?.length ? (
+        <div className="mt-3 space-y-2">
+          {options.map((option) => (
+            <div
+              key={option.name}
+              className="flex items-center justify-between gap-4 border-b border-white/[0.06] pb-2 last:border-b-0 last:pb-0"
+            >
+              <span className="text-sm font-medium text-[#ebe4dc] sm:text-[0.9375rem]">
+                {option.name}
+              </span>
+              <span className="shrink-0 whitespace-nowrap text-sm font-semibold tabular-nums text-[#d4af37]/95 sm:text-[0.9375rem]">
+                {option.price}
+              </span>
+            </div>
+          ))}
+        </div>
+      ) : null}
+      {descriptionList?.length ? (
+        <div className="mt-4 border-t border-white/[0.06] pt-4">
+          <ul className="grid grid-cols-1 gap-y-1.5 pl-5 text-sm leading-relaxed text-[var(--foreground-muted)] min-[430px]:grid-cols-2 min-[430px]:gap-x-6 sm:text-[0.9375rem]">
+            {descriptionList.map((detail) => (
+              <li key={detail} className="list-disc marker:text-[#d4af37]/85">
+                {detail}
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : description ? (
         <p className="mt-4 border-t border-white/[0.06] pt-4 text-sm leading-relaxed text-[var(--foreground-muted)] sm:text-[0.9375rem]">
           {description}
         </p>
@@ -85,15 +118,37 @@ export function MenuSection() {
               <CategoryHeading title={category.title} />
 
               {category.layout === "cards" ? (
-                <div className="grid gap-5 sm:gap-6">
-                  {category.items.map((item) => (
-                    <MenuCard
-                      key={item.name}
-                      name={item.name}
-                      price={item.price}
-                      description={item.description}
-                    />
-                  ))}
+                <div className="space-y-6 sm:space-y-7">
+                  <div className="grid gap-5 sm:gap-6">
+                    {category.items.map((item) => (
+                      <MenuCard
+                        key={item.name}
+                        name={item.name}
+                        price={item.price}
+                        options={item.options}
+                        description={item.description}
+                        descriptionList={item.descriptionList}
+                      />
+                    ))}
+                  </div>
+                  {category.subSectionTitle && category.subSectionItems?.length ? (
+                    <div
+                      className={cn(
+                        "rounded-2xl border border-white/[0.07] bg-[var(--surface)]/85 px-5 py-4 shadow-inner shadow-black/25 sm:px-8 sm:py-5",
+                      )}
+                    >
+                      <h4 className="mb-3 font-[family-name:var(--font-display)] text-base font-semibold tracking-tight text-[#f5f0e8] sm:text-lg">
+                        {category.subSectionTitle}
+                      </h4>
+                      {category.subSectionItems.map((item) => (
+                        <MenuRow
+                          key={item.name}
+                          name={item.name}
+                          price={item.price}
+                        />
+                      ))}
+                    </div>
+                  ) : null}
                 </div>
               ) : (
                 <div
