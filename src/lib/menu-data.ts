@@ -3,7 +3,7 @@ export type MenuItemOption = {
   price: string;
 };
 
-export type MenuItem = {
+export type CardMenuItem = {
   name: string;
   price?: string;
   options?: MenuItemOption[];
@@ -11,15 +11,30 @@ export type MenuItem = {
   descriptionList?: string[];
 };
 
-export type MenuCategory = {
-  id: string;
-  title: string;
-  items: MenuItem[];
-  /** Açıklamalı ürünler için kart; diğerleri için kompakt satır */
-  layout: "cards" | "rows";
-  subSectionTitle?: string;
-  subSectionItems?: MenuItem[];
+export type RowMenuItem = {
+  name: string;
+  price: string;
 };
+
+export type MenuCategory =
+  | {
+      id: string;
+      title: string;
+      /** Açıklamalı ürünler için kart */
+      layout: "cards";
+      items: CardMenuItem[];
+      subSectionTitle?: string;
+      subSectionItems?: RowMenuItem[];
+    }
+  | {
+      id: string;
+      title: string;
+      /** Kompakt satır listesi */
+      layout: "rows";
+      items: RowMenuItem[];
+      subSectionTitle?: string;
+      subSectionItems?: RowMenuItem[];
+    };
 
 export const menuCategories: MenuCategory[] = [
   {

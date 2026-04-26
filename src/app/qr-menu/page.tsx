@@ -135,6 +135,10 @@ function QrMenuRow({ name, price }: { name: string; price: string }) {
   );
 }
 
+function getSafePrice(price: string | undefined): string {
+  return price ?? "";
+}
+
 export default function QrMenuPage() {
   return (
     <div className="min-h-[100dvh] bg-[var(--background)] text-[var(--foreground)] antialiased">
@@ -259,7 +263,7 @@ export default function QrMenuPage() {
                         <QrMenuRow
                           key={item.name}
                           name={item.name}
-                          price={item.price}
+                          price={getSafePrice(item.price)}
                         />
                       ))}
                     </div>
@@ -278,7 +282,7 @@ export default function QrMenuPage() {
                           <QrMenuRow
                             key={item.name}
                             name={item.name}
-                            price={item.price}
+                            price={getSafePrice(item.price)}
                           />
                         ))}
                       </div>
@@ -290,7 +294,7 @@ export default function QrMenuPage() {
                               <QrMenuRow
                                 key={item.name}
                                 name={item.name}
-                                price={item.price}
+                                price={getSafePrice(item.price)}
                               />
                             ))}
                         </div>
@@ -301,7 +305,7 @@ export default function QrMenuPage() {
                               <QrMenuRow
                                 key={item.name}
                                 name={item.name}
-                                price={item.price}
+                                price={getSafePrice(item.price)}
                               />
                             ))}
                         </div>
@@ -313,7 +317,7 @@ export default function QrMenuPage() {
                         <QrMenuRow
                           key={item.name}
                           name={item.name}
-                          price={item.price}
+                          price={getSafePrice(item.price)}
                         />
                       ))}
                     </div>
