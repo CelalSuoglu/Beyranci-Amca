@@ -159,7 +159,7 @@ export const menuCategories: MenuCategory[] = [
       { name: "Fanta", price: "80,00 TL" },
       { name: "Sprite", price: "80,00 TL" },
       { name: "Ice Tea", price: "80,00 TL" },
-      { name: "Ayran", price: "560,00 TL" },
+      { name: "Ayran", price: "60,00 TL" },
       { name: "Acılı / Acısız Şalgam", price: "60,00 TL" },
       { name: "Soda", price: "35,00 TL" },
     ],
