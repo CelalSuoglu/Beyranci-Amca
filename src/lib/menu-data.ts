@@ -73,7 +73,7 @@ export const menuCategories: MenuCategory[] = [
     layout: "rows",
     items: [
       { name: "Kilis Tava (1 Porsiyon)", price: "550,00 TL" },
-      { name: "Eli Böğründe (1 Porsiyon)", price: "600,00 TL" },
+      { name: "Eli Böğründe (1 Porsiyon)", price: "700,00 TL" },
       { name: "Patlıcan Kebabı (1 Porsiyon)", price: "575,00 TL" },
       { name: "Kuşbaşı Tava (1 Porsiyon)", price: "625,00 TL" },
     ],
