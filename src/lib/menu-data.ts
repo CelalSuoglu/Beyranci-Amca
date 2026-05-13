@@ -84,7 +84,7 @@ export const menuCategories: MenuCategory[] = [
     id: "tatlilar",
     title: "Tatlılar",
     layout: "rows",
-    items: [{ name: "Tek Kişilik Künefe", price: "250,00 TL" }],
+    items: [{ name: "hasir Künefe", price: "250,00 TL" }],
   },
   {
     id: "icecekler",
