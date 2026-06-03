@@ -1,31 +1,9 @@
 import Image from "next/image";
 import { menuCategories } from "@/lib/menu-data";
+import { campaigns } from "@/lib/campaign-data";
 import { site } from "@/lib/site";
 import { brand } from "@/lib/brand";
 import { cn } from "@/lib/utils";
-
-const qrDeals = [
-  {
-    id: "nohut-ayran",
-    label: "FIRSAT",
-    title: "Nohut Dürüm + Ayran",
-    price: "150",
-    currency: "TL",
-    gradient: "from-[#3d1810] via-[#2a120e] to-[#1a0c08] ring-[#d4af37]/25",
-    accent: "text-[#fde68a]",
-    glow: "after:bg-[radial-gradient(circle_at_30%_0%,rgba(234,88,12,0.22),transparent_55%)]",
-  },
-  {
-    id: "ciger-ayran",
-    label: "FIRSAT",
-    title: "Ciğer Dürüm + Ayran",
-    price: "200",
-    currency: "TL",
-    gradient: "from-[#451a0a] via-[#2d120c] to-[#140804] ring-[#ea580c]/30",
-    accent: "text-[#fdba74]",
-    glow: "after:bg-[radial-gradient(circle_at_70%_0%,rgba(212,175,55,0.14),transparent_50%)]",
-  },
-] as const;
 
 function QrCategoryTitle({
   title,
@@ -176,8 +154,8 @@ export default function QrMenuPage() {
               id="qr-firsat-menusu"
               isFirst
             />
-            <div className="grid gap-4 md:grid-cols-2 md:gap-5">
-              {qrDeals.map((deal) => (
+            <div className="grid grid-cols-1 gap-3">
+              {campaigns.map((deal) => (
                 <article
                   key={deal.id}
                   className={cn(
@@ -198,9 +176,9 @@ export default function QrMenuPage() {
                       />
                     </div>
                     <p className="mt-1.5 text-[9px] font-semibold uppercase tracking-[0.28em] text-[#c4a574]/80">
-                      {deal.label}
+                      Kampanya
                     </p>
-                    <h3 className="mt-1 max-w-[13rem] font-[family-name:var(--font-display)] text-base font-semibold leading-snug tracking-tight text-[#faf6ef] transition group-hover:text-white sm:max-w-[14rem] sm:text-[1.05rem]">
+                    <h3 className="mt-1 w-full max-w-[16rem] px-1 font-[family-name:var(--font-display)] text-[0.9375rem] font-semibold leading-snug tracking-tight text-[#faf6ef]">
                       {deal.title}
                     </h3>
                     <div
