@@ -84,7 +84,17 @@ export const menuCategories: MenuCategory[] = [
     id: "tatlilar",
     title: "Tatlılar",
     layout: "rows",
-    items: [{ name: "hasir Künefe", price: "250,00 TL" }],
+    items: [
+      { name: "Şekerli Börek", price: "200,00 TL" },
+      { name: "hasir Künefe", price: "350,00 TL" },
+      { name: "Kesme Dondurma", price: "125,00 TL" },
+    ],
+  },
+  {
+    id: "ekstralar",
+    title: "Extralar",
+    layout: "rows",
+    items: [{ name: "İçli Köfte (Adet)", price: "125,00 TL" }],
   },
   {
     id: "icecekler",
