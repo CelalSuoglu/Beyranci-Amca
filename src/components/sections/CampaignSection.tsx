@@ -25,7 +25,7 @@ export function CampaignSection() {
           title="Kampanyalar"
         />
 
-        <div className="campaign-card-grid mx-auto mt-8 grid max-w-[42rem] gap-4 sm:mt-10 md:grid-cols-2 md:gap-5">
+        <div className="mx-auto mt-8 grid max-w-5xl grid-cols-1 gap-4 sm:mt-10 sm:grid-cols-2 sm:gap-5 lg:max-w-6xl lg:gap-6">
           {campaigns.map((c) => (
             <article
               key={c.id}
@@ -50,7 +50,7 @@ export function CampaignSection() {
                 <p className="mt-2.5 text-[9px] font-semibold uppercase tracking-[0.32em] text-[#c4a574]/85 sm:text-[10px]">
                   Kampanya
                 </p>
-                <h3 className="mt-1.5 max-w-[13.5rem] font-[family-name:var(--font-display)] text-lg font-semibold leading-snug tracking-tight text-[#faf6ef] transition group-hover:text-white sm:max-w-[15rem] sm:text-xl sm:leading-tight">
+                <h3 className="mt-1.5 max-w-[17rem] font-[family-name:var(--font-display)] text-lg font-semibold leading-snug tracking-tight text-[#faf6ef] transition group-hover:text-white sm:max-w-[19rem] sm:text-xl sm:leading-tight">
                   {c.title}
                 </h3>
                 <div
