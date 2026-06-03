@@ -86,7 +86,7 @@ export const menuCategories: MenuCategory[] = [
     layout: "rows",
     items: [
       { name: "Şekerli Börek", price: "200,00 TL" },
-      { name: "hasir Künefe", price: "350,00 TL" },
+      { name: "Hasir Künefe", price: "350,00 TL" },
       { name: "Kesme Dondurma", price: "125,00 TL" },
     ],
   },
