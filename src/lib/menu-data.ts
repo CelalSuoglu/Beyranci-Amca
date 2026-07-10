@@ -81,6 +81,23 @@ export const menuCategories: MenuCategory[] = [
     ],
   },
   {
+    id: "izgara",
+    title: "İzgara Çeşitleri",
+    layout: "rows",
+    items: [
+      { name: "Tavuk Şiş Dürüm (120gr)", price: "280,00 TL" },
+      { name: "Adana Dürüm (100gr)", price: "300,00 TL" },
+      { name: "Urfa Dürüm (100gr)", price: "300,00 TL" },
+      { name: "Kuşbaşı Dürüm (100gr)", price: "350,00 TL" },
+      { name: "Ciğer Dürüm (120gr)", price: "290,00 TL" },
+      { name: "Pirzola (250gr)", price: "590,00 TL" },
+      { name: "Yürek Dürüm (120gr)", price: "260,00 TL" },
+      { name: "Yağlı Kara (250gr)", price: "590,00 TL" },
+      { name: "Sucuk Ekmek", price: "250,00 TL" },
+      { name: "Köfte Ekmek", price: "270,00 TL" },
+    ],
+  },
+  {
     id: "tatlilar",
     title: "Tatlılar",
     layout: "rows",
