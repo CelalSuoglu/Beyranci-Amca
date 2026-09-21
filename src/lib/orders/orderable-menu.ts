@@ -1,4 +1,5 @@
 import { menuCategories } from "@/lib/menu-data";
+import { productRequiresSpice } from "./spice";
 
 export type OrderableProduct = {
   id: string;
@@ -8,6 +9,8 @@ export type OrderableProduct = {
   description?: string;
   /** Birim fiyat (TL, sayısal) */
   unitPrice: number;
+  /** Acı seçeneği zorunlu mu (beyran / kebap / lahmacun) */
+  requiresSpice: boolean;
 };
 
 /** "450,00 TL" / "450 TL" → 450 */
@@ -55,6 +58,7 @@ function buildProducts(): OrderableProduct[] {
             name,
             description: item.description,
             unitPrice,
+            requiresSpice: productRequiresSpice(name),
           });
         }
         continue;
@@ -72,6 +76,7 @@ function buildProducts(): OrderableProduct[] {
         description:
           "description" in item ? item.description : undefined,
         unitPrice,
+        requiresSpice: productRequiresSpice(item.name),
       });
     }
 
@@ -85,6 +90,7 @@ function buildProducts(): OrderableProduct[] {
           categoryTitle: category.subSectionTitle ?? category.title,
           name: item.name,
           unitPrice,
+          requiresSpice: productRequiresSpice(item.name),
         });
       }
     }

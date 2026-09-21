@@ -2,10 +2,16 @@ import { z } from "zod";
 import { MIN_ORDER_TOTAL_TL, ORDER_STATUSES, PAYMENT_METHODS } from "./constants";
 import { getOrderableProduct } from "./orderable-menu";
 import { normalizeTurkishPhone } from "./format";
+import {
+  SPICE_LEVELS,
+  SPICE_LEVEL_LABELS,
+  type SpiceLevel,
+} from "./spice";
 
 export const cartItemInputSchema = z.object({
   productId: z.string().min(1),
   quantity: z.number().int().min(1).max(99),
+  spiceLevel: z.enum(SPICE_LEVELS).optional(),
 });
 
 export const createOrderInputSchema = z.object({
@@ -48,6 +54,7 @@ export type ValidatedOrderLine = {
   unitPrice: number;
   quantity: number;
   lineTotal: number;
+  spiceLevel: SpiceLevel | null;
 };
 
 export type ValidatedOrder = {
@@ -81,25 +88,56 @@ export function validateAndPriceOrder(
   const seen = new Set<string>();
 
   for (const item of input.items) {
-    if (seen.has(item.productId)) {
-      return { ok: false, message: "Sepette aynı ürün birden fazla kez gönderilemez." };
-    }
-    seen.add(item.productId);
-
     const product = getOrderableProduct(item.productId);
     if (!product) {
-      return { ok: false, message: "Sepette geçersiz bir ürün var. Sayfayı yenileyip tekrar deneyin." };
+      return {
+        ok: false,
+        message:
+          "Sepette geçersiz bir ürün var. Sayfayı yenileyip tekrar deneyin.",
+      };
     }
+
+    let spiceLevel: SpiceLevel | null = null;
+    if (product.requiresSpice) {
+      if (!item.spiceLevel) {
+        return {
+          ok: false,
+          message: `${product.name} için acı seçeneği zorunludur (Acılı / Az acılı / Acısız).`,
+        };
+      }
+      spiceLevel = item.spiceLevel;
+    } else if (item.spiceLevel) {
+      return {
+        ok: false,
+        message: `${product.name} için acı seçeneği geçerli değil.`,
+      };
+    }
+
+    const lineKey = spiceLevel
+      ? `${item.productId}__${spiceLevel}`
+      : item.productId;
+    if (seen.has(lineKey)) {
+      return {
+        ok: false,
+        message: "Sepette aynı ürün ve acı seçeneği birden fazla kez gönderilemez.",
+      };
+    }
+    seen.add(lineKey);
+
+    const displayName = spiceLevel
+      ? `${product.name} (${SPICE_LEVEL_LABELS[spiceLevel]})`
+      : product.name;
 
     const lineTotal =
       Math.round(product.unitPrice * item.quantity * 100) / 100;
 
     lines.push({
       productId: product.id,
-      name: product.name,
+      name: displayName,
       unitPrice: product.unitPrice,
       quantity: item.quantity,
       lineTotal,
+      spiceLevel,
     });
   }
 

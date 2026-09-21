@@ -1,4 +1,5 @@
 import type { OrderStatus, PaymentMethod } from "./constants";
+import type { SpiceLevel } from "./spice";
 
 export type OrderItemRecord = {
   productId: string;
@@ -6,6 +7,7 @@ export type OrderItemRecord = {
   unitPrice: number;
   quantity: number;
   lineTotal: number;
+  spiceLevel?: SpiceLevel | null;
 };
 
 export type OrderRecord = {

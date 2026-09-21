@@ -10,20 +10,45 @@ import {
   getOrderableCategories,
   type OrderableProduct,
 } from "@/lib/orders/orderable-menu";
+import {
+  SPICE_LEVELS,
+  SPICE_LEVEL_LABELS,
+  type SpiceLevel,
+} from "@/lib/orders/spice";
 import { site } from "@/lib/site";
 import { cn } from "@/lib/utils";
 
-type CartMap = Record<string, number>;
+type CartLine = {
+  key: string;
+  productId: string;
+  quantity: number;
+  spiceLevel: SpiceLevel | null;
+};
 
 type SuccessState = {
   orderNumber: string;
   total: number;
 };
 
+function cartKey(productId: string, spice: SpiceLevel | null) {
+  return spice ? `${productId}__${spice}` : productId;
+}
+
 export function SiparisPageClient() {
   const categories = useMemo(() => getOrderableCategories(), []);
-  const [cart, setCart] = useState<CartMap>({});
+  const productMap = useMemo(() => {
+    const map = new Map<string, OrderableProduct>();
+    for (const category of categories) {
+      for (const product of category.products) {
+        map.set(product.id, product);
+      }
+    }
+    return map;
+  }, [categories]);
+
+  const [cart, setCart] = useState<CartLine[]>([]);
   const [qtys, setQtys] = useState<Record<string, number>>({});
+  const [spicePick, setSpicePick] = useState<Record<string, SpiceLevel>>({});
   const [customerName, setCustomerName] = useState("");
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
@@ -34,24 +59,29 @@ export function SiparisPageClient() {
   const [pending, startTransition] = useTransition();
 
   const cartLines = useMemo(() => {
-    return Object.entries(cart)
-      .map(([productId, quantity]) => {
-        const product = categories
-          .flatMap((c) => c.products)
-          .find((p) => p.id === productId);
-        if (!product || quantity < 1) return null;
+    return cart
+      .map((line) => {
+        const product = productMap.get(line.productId);
+        if (!product || line.quantity < 1) return null;
         return {
+          ...line,
           product,
-          quantity,
-          lineTotal: Math.round(product.unitPrice * quantity * 100) / 100,
+          lineTotal: Math.round(product.unitPrice * line.quantity * 100) / 100,
+          displayName: line.spiceLevel
+            ? `${product.name} (${SPICE_LEVEL_LABELS[line.spiceLevel]})`
+            : product.name,
         };
       })
       .filter(Boolean) as {
-      product: OrderableProduct;
+      key: string;
+      productId: string;
       quantity: number;
+      spiceLevel: SpiceLevel | null;
+      product: OrderableProduct;
       lineTotal: number;
+      displayName: string;
     }[];
-  }, [cart, categories]);
+  }, [cart, productMap]);
 
   const subtotal = useMemo(
     () =>
@@ -75,23 +105,48 @@ export function SiparisPageClient() {
     }));
   }
 
-  function addToCart(productId: string) {
-    const quantity = getQty(productId);
-    setCart((prev) => ({
-      ...prev,
-      [productId]: (prev[productId] ?? 0) + quantity,
-    }));
+  function getSpice(productId: string): SpiceLevel {
+    return spicePick[productId] ?? "az_acili";
+  }
+
+  function addToCart(product: OrderableProduct) {
+    const quantity = getQty(product.id);
+    const spice = product.requiresSpice ? getSpice(product.id) : null;
+    const key = cartKey(product.id, spice);
+
+    setCart((prev) => {
+      const existing = prev.find((line) => line.key === key);
+      if (existing) {
+        return prev.map((line) =>
+          line.key === key
+            ? {
+                ...line,
+                quantity: Math.min(99, line.quantity + quantity),
+              }
+            : line,
+        );
+      }
+      return [
+        ...prev,
+        {
+          key,
+          productId: product.id,
+          quantity,
+          spiceLevel: spice,
+        },
+      ];
+    });
     setError(null);
   }
 
-  function updateCartQty(productId: string, next: number) {
+  function updateCartQty(key: string, next: number) {
     setCart((prev) => {
-      if (next < 1) {
-        const nextCart = { ...prev };
-        delete nextCart[productId];
-        return nextCart;
-      }
-      return { ...prev, [productId]: Math.min(99, next) };
+      if (next < 1) return prev.filter((line) => line.key !== key);
+      return prev.map((line) =>
+        line.key === key
+          ? { ...line, quantity: Math.min(99, next) }
+          : line,
+      );
     });
   }
 
@@ -120,6 +175,7 @@ export function SiparisPageClient() {
             items: cartLines.map((line) => ({
               productId: line.product.id,
               quantity: line.quantity,
+              ...(line.spiceLevel ? { spiceLevel: line.spiceLevel } : {}),
             })),
           }),
         });
@@ -142,7 +198,7 @@ export function SiparisPageClient() {
           orderNumber: data.orderNumber,
           total: data.total ?? subtotal,
         });
-        setCart({});
+        setCart([]);
       } catch {
         setError(
           "Bağlantı kurulamadı. İnternetinizi kontrol edip tekrar deneyin.",
@@ -217,7 +273,8 @@ export function SiparisPageClient() {
           <strong className="font-semibold text-[#e8c76a]">
             {formatTry(MIN_ORDER_TOTAL_TL)}
           </strong>
-          . Ödeme kapıda nakit veya kart ile alınır.
+          . Beyran, kebap ve lahmacun için acı seçeneği seçin. Ödeme kapıda
+          nakit veya kart ile alınır.
         </p>
         <div className="mt-4 flex flex-wrap gap-3 text-sm">
           <Link
@@ -250,6 +307,7 @@ export function SiparisPageClient() {
               <div className="mt-4 space-y-3">
                 {category.products.map((product) => {
                   const qty = getQty(product.id);
+                  const spice = getSpice(product.id);
                   return (
                     <article
                       key={product.id}
@@ -270,6 +328,43 @@ export function SiparisPageClient() {
                           {formatTry(product.unitPrice)}
                         </p>
                       </div>
+
+                      {product.requiresSpice ? (
+                        <fieldset className="mt-4">
+                          <legend className="text-xs font-semibold uppercase tracking-[0.16em] text-[#d4af37]/90">
+                            Acı seçeneği
+                          </legend>
+                          <div className="mt-2 flex flex-wrap gap-2">
+                            {SPICE_LEVELS.map((level) => (
+                              <label
+                                key={level}
+                                className={cn(
+                                  "inline-flex min-h-10 cursor-pointer items-center rounded-full border px-3 text-sm font-medium transition-colors",
+                                  spice === level
+                                    ? "border-[#d4af37]/55 bg-[#d4af37]/15 text-[#fde68a]"
+                                    : "border-white/12 text-[var(--foreground-muted)] hover:border-white/25",
+                                )}
+                              >
+                                <input
+                                  type="radio"
+                                  name={`spice-${product.id}`}
+                                  value={level}
+                                  checked={spice === level}
+                                  onChange={() =>
+                                    setSpicePick((prev) => ({
+                                      ...prev,
+                                      [product.id]: level,
+                                    }))
+                                  }
+                                  className="sr-only"
+                                />
+                                {SPICE_LEVEL_LABELS[level]}
+                              </label>
+                            ))}
+                          </div>
+                        </fieldset>
+                      ) : null}
+
                       <div className="mt-4 flex flex-wrap items-center gap-3">
                         <div
                           className="inline-flex items-center rounded-full border border-white/15"
@@ -303,7 +398,7 @@ export function SiparisPageClient() {
                           type="button"
                           variant="outline"
                           className="!min-h-11 !rounded-full !px-4 text-sm"
-                          onClick={() => addToCart(product.id)}
+                          onClick={() => addToCart(product)}
                         >
                           Sepete ekle
                         </Button>
@@ -330,12 +425,12 @@ export function SiparisPageClient() {
               <ul className="mt-4 space-y-3" aria-label="Sepet ürünleri">
                 {cartLines.map((line) => (
                   <li
-                    key={line.product.id}
+                    key={line.key}
                     className="flex items-start justify-between gap-3 border-b border-white/[0.06] pb-3 last:border-0"
                   >
                     <div className="min-w-0">
                       <p className="font-medium text-[var(--foreground)]">
-                        {line.product.name}
+                        {line.displayName}
                       </p>
                       <p className="mt-1 text-sm text-[var(--foreground-muted)]">
                         {formatTry(line.product.unitPrice)} × {line.quantity}
@@ -344,9 +439,9 @@ export function SiparisPageClient() {
                         <button
                           type="button"
                           className="flex h-9 w-9 items-center justify-center"
-                          aria-label={`${line.product.name} adedini azalt`}
+                          aria-label={`${line.displayName} adedini azalt`}
                           onClick={() =>
-                            updateCartQty(line.product.id, line.quantity - 1)
+                            updateCartQty(line.key, line.quantity - 1)
                           }
                         >
                           −
@@ -357,9 +452,9 @@ export function SiparisPageClient() {
                         <button
                           type="button"
                           className="flex h-9 w-9 items-center justify-center"
-                          aria-label={`${line.product.name} adedini artır`}
+                          aria-label={`${line.displayName} adedini artır`}
                           onClick={() =>
-                            updateCartQty(line.product.id, line.quantity + 1)
+                            updateCartQty(line.key, line.quantity + 1)
                           }
                         >
                           +
