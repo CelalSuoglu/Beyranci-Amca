@@ -45,6 +45,12 @@ function slugify(input: string): string {
     .replace(/^-+|-+$/g, "");
 }
 
+/** Paket siparişte sunulmayan ürünler (QR menüde kalabilir) */
+function isExcludedFromPackage(name: string): boolean {
+  const n = name.toLocaleLowerCase("tr-TR");
+  return n.includes("türk kahvesi") || n.includes("turk kahvesi");
+}
+
 function buildProducts(): OrderableProduct[] {
   const products: OrderableProduct[] = [];
 
@@ -55,6 +61,7 @@ function buildProducts(): OrderableProduct[] {
           const unitPrice = parsePriceTl(option.price);
           if (unitPrice === null) continue;
           const name = `${item.name} — ${option.name}`;
+          if (isExcludedFromPackage(name)) continue;
           const modifiers = getProductModifiers(name);
           products.push({
             id: `${category.id}-${slugify(name)}`,
@@ -72,6 +79,7 @@ function buildProducts(): OrderableProduct[] {
       }
 
       if (!item.price) continue;
+      if (isExcludedFromPackage(item.name)) continue;
       const unitPrice = parsePriceTl(item.price);
       if (unitPrice === null) continue;
 
@@ -94,6 +102,7 @@ function buildProducts(): OrderableProduct[] {
 
     if (category.subSectionItems?.length) {
       for (const item of category.subSectionItems) {
+        if (isExcludedFromPackage(item.name)) continue;
         const unitPrice = parsePriceTl(item.price);
         if (unitPrice === null) continue;
         const modifiers = getProductModifiers(item.name);

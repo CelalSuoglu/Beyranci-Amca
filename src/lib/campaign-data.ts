@@ -33,14 +33,4 @@ export const campaigns = [
     accent: "text-[#fde68a]",
     glow: "after:bg-[radial-gradient(circle_at_50%_0%,rgba(212,175,55,0.18),transparent_55%)]",
   },
-  {
-    id: "hasir-kunefe",
-    title: "Hasır Künefe + Türk Kahvesi",
-    price: "380",
-    currency: "TL",
-    gradient:
-      "from-[#3d2010] via-[#281508] to-[#180c06] ring-[#ea580c]/25",
-    accent: "text-[#fdba74]",
-    glow: "after:bg-[radial-gradient(circle_at_70%_0%,rgba(234,88,12,0.16),transparent_50%)]",
-  },
 ] as const;

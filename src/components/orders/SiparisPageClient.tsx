@@ -258,6 +258,9 @@ export function SiparisPageClient() {
           <p className="mt-3 text-sm text-[var(--foreground-muted)]">
             Toplam: {formatTry(success.total)}
           </p>
+          <p className="mt-5 text-base font-medium text-[#fde68a]">
+            30 dakika teslimat süresi vardır.
+          </p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
             <Button href="/" className="justify-center">
               Ana sayfa
