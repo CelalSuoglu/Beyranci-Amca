@@ -10,7 +10,6 @@ export { FloatingWhatsAppButton } from "./floating-whatsapp-button/FloatingWhats
 export { HeroSection } from "./sections/HeroSection";
 export { AboutSection } from "./sections/AboutSection";
 export { MenuSection } from "./sections/MenuSection";
-export { CampaignSection } from "./sections/CampaignSection";
 export { GallerySection } from "./sections/gallery/GallerySection";
 export { ContactSection } from "./sections/ContactSection";
 export { MapSection } from "./sections/MapSection";

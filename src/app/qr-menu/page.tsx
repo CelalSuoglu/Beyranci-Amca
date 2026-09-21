@@ -1,6 +1,5 @@
 import Image from "next/image";
 import { menuCategories } from "@/lib/menu-data";
-import { campaigns } from "@/lib/campaign-data";
 import { site } from "@/lib/site";
 import { brand } from "@/lib/brand";
 import { cn } from "@/lib/utils";
@@ -148,61 +147,6 @@ export default function QrMenuPage() {
         </header>
 
         <main className="mt-10 sm:mt-12">
-          <section className="mb-14 sm:mb-16" aria-labelledby="qr-firsat-menusu">
-            <QrCategoryTitle
-              title="Fırsat Menüsü"
-              id="qr-firsat-menusu"
-              isFirst
-            />
-            <div className="grid grid-cols-1 gap-3">
-              {campaigns.map((deal) => (
-                <article
-                  key={deal.id}
-                  className={cn(
-                    "group relative isolate overflow-hidden rounded-2xl border border-white/[0.08] bg-gradient-to-br shadow-[0_12px_24px_-12px_rgba(0,0,0,0.6)] ring-1 ring-inset transition duration-300 hover:-translate-y-0.5 hover:shadow-[0_14px_28px_-12px_rgba(0,0,0,0.65)]",
-                    deal.gradient,
-                    deal.glow,
-                    "after:pointer-events-none after:absolute after:inset-0 after:-z-10 after:opacity-100",
-                  )}
-                >
-                  <div className="relative z-10 flex flex-col items-center px-4 py-3.5 text-center sm:px-4.5 sm:py-4">
-                    <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-lg border border-white/10 bg-black/20 shadow-inner sm:h-14 sm:w-14">
-                      <Image
-                        src="/beyranci-amca.png"
-                        alt=""
-                        fill
-                        className="object-contain object-center p-1.5"
-                        sizes="56px"
-                      />
-                    </div>
-                    <p className="mt-1.5 text-[9px] font-semibold uppercase tracking-[0.28em] text-[#c4a574]/80">
-                      Kampanya
-                    </p>
-                    <h3 className="mt-1 w-full max-w-[16rem] px-1 font-[family-name:var(--font-display)] text-[0.9375rem] font-semibold leading-snug tracking-tight text-[#faf6ef]">
-                      {deal.title}
-                    </h3>
-                    <div
-                      className="mt-2.5 flex w-full max-w-[13rem] flex-wrap items-end justify-center gap-x-1 gap-y-0.5 border-t border-white/12 pt-2.5"
-                      aria-label={`Fiyat: ${deal.price} ${deal.currency}`}
-                    >
-                      <span
-                        className={cn(
-                          "font-[family-name:var(--font-display)] text-xl font-medium tabular-nums leading-none tracking-tight sm:text-2xl",
-                          deal.accent,
-                        )}
-                      >
-                        {deal.price}
-                      </span>
-                      <span className="pb-0.5 text-xs font-medium text-[#e8dcc8]/95 sm:text-sm">
-                        {deal.currency}
-                      </span>
-                    </div>
-                  </div>
-                </article>
-              ))}
-            </div>
-          </section>
-
           {menuCategories.map((category, catIndex) => (
             <section
               key={category.id}

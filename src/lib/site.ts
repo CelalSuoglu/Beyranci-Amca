@@ -70,7 +70,6 @@ export const navItems = [
   { href: "#hero", label: "Ana Sayfa" },
   { href: "#about", label: "Hakkımızda" },
   { href: "#menu", label: "Menü" },
-  { href: "#campaign", label: "Kampanyalar" },
   { href: "#gallery", label: "Galeri" },
   { href: "#contact", label: "İletişim" },
 ] as const;

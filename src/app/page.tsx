@@ -5,7 +5,6 @@ import {
   HeroSection,
   AboutSection,
   MenuSection,
-  CampaignSection,
   GallerySection,
   ContactSection,
   MapSection,
@@ -19,7 +18,6 @@ export default function Home() {
         <HeroSection />
         <AboutSection />
         <MenuSection />
-        <CampaignSection />
         <GallerySection />
         <ContactSection />
         <MapSection />
