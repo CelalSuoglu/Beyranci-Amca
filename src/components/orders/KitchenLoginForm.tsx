@@ -30,7 +30,18 @@ export function KitchenLoginForm() {
         });
 
         if (signInError) {
-          setError("E-posta veya şifre hatalı.");
+          const raw = signInError.message || "";
+          if (/confirm|not confirmed|email not confirmed/i.test(raw)) {
+            setError(
+              "E-posta henüz onaylı değil. Supabase’te kullanıcıyı Auto Confirm ile yeniden oluşturun.",
+            );
+          } else if (/invalid login|invalid credentials|wrong/i.test(raw)) {
+            setError(
+              "E-posta veya şifre hatalı. Supabase → Authentication → Users’ta aynı hesabı kontrol edin.",
+            );
+          } else {
+            setError(`Giriş başarısız: ${raw}`);
+          }
           return;
         }
 
