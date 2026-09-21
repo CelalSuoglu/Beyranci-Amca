@@ -8,10 +8,10 @@ export const SPICE_LEVEL_LABELS: Record<SpiceLevel, string> = {
   acisiz: "Acısız",
 };
 
-/** Lahmacun: yalnızca Acılı / Acısız */
-export const LAHMACUN_SPICE_LEVELS = ["acili", "acisiz"] as const satisfies readonly SpiceLevel[];
+/** Lahmacun ve kebap: yalnızca Acılı / Acısız */
+export const SIMPLE_SPICE_LEVELS = ["acili", "acisiz"] as const satisfies readonly SpiceLevel[];
 
-/** Kebap ve beyran: Acılı / Az acılı / Acısız */
+/** Beyran: Acılı / Az acılı / Acısız */
 export const FULL_SPICE_LEVELS = [
   "acili",
   "az_acili",
@@ -33,9 +33,8 @@ export type ProductModifiers = {
 };
 
 /**
- * Beyran → acı + sarımsak
- * Lahmacun (kaşarlı dahil) → Acılı / Acısız
- * Adana / Urfa kebap → Acılı / Az acılı / Acısız
+ * Beyran → acı (3 seçenek) + sarımsak
+ * Lahmacun (kaşarlı dahil) ve Adana / Urfa kebap → Acılı / Acısız
  */
 export function getProductModifiers(productName: string): ProductModifiers {
   const n = productName.toLocaleLowerCase("tr-TR");
@@ -46,11 +45,8 @@ export function getProductModifiers(productName: string): ProductModifiers {
   if (isBeyran) {
     return { spiceLevels: FULL_SPICE_LEVELS, requiresGarlic: true };
   }
-  if (isLahmacun) {
-    return { spiceLevels: LAHMACUN_SPICE_LEVELS, requiresGarlic: false };
-  }
-  if (isKebab) {
-    return { spiceLevels: FULL_SPICE_LEVELS, requiresGarlic: false };
+  if (isLahmacun || isKebab) {
+    return { spiceLevels: SIMPLE_SPICE_LEVELS, requiresGarlic: false };
   }
   return { spiceLevels: null, requiresGarlic: false };
 }
