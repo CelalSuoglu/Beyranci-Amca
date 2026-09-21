@@ -1,6 +1,32 @@
 /** Mutfak yeni sipariş alarmı — tarayıcı autoplay kuralları için kullanıcı etkileşimi gerekir. */
 
 let sharedCtx: AudioContext | null = null;
+let armed = false;
+const listeners = new Set<(value: boolean) => void>();
+
+function notifyArmed() {
+  for (const listener of listeners) listener(armed);
+}
+
+function setArmed(value: boolean) {
+  if (armed === value) return;
+  armed = value;
+  notifyArmed();
+}
+
+export function isKitchenAudioArmed(): boolean {
+  return armed;
+}
+
+export function subscribeKitchenAudioArmed(
+  listener: (value: boolean) => void,
+): () => void {
+  listeners.add(listener);
+  listener(armed);
+  return () => {
+    listeners.delete(listener);
+  };
+}
 
 function getAudioContext(): AudioContext | null {
   if (typeof window === "undefined") return null;
@@ -16,95 +42,101 @@ function getAudioContext(): AudioContext | null {
   return sharedCtx;
 }
 
-/** İlk tıklamada / girişten sonra çağırın — ses iznini açar. */
+/** iOS/Safari: kullanıcı jesti içinde kısa sessiz buffer çalarak sesi kalıcı açar. */
+async function primeContext(ctx: AudioContext): Promise<void> {
+  if (ctx.state === "suspended") {
+    await ctx.resume();
+  }
+  try {
+    const buffer = ctx.createBuffer(1, 1, ctx.sampleRate);
+    const source = ctx.createBufferSource();
+    source.buffer = buffer;
+    source.connect(ctx.destination);
+    source.start(0);
+  } catch {
+    // prime başarısız olsa da resume yeterli olabilir
+  }
+}
+
+/** Panelde tıklama / “Ses test et” / giriş sonrası çağırın. */
 export async function unlockKitchenAudio(): Promise<boolean> {
   try {
     const ctx = getAudioContext();
-    if (!ctx) return false;
-    if (ctx.state === "suspended") {
-      await ctx.resume();
+    if (!ctx) {
+      setArmed(false);
+      return false;
     }
-    return ctx.state === "running";
+    await primeContext(ctx);
+    const ok = ctx.state === "running";
+    setArmed(ok);
+    return ok;
   } catch {
+    setArmed(false);
     return false;
   }
 }
 
-function playBell(
+function tone(
   ctx: AudioContext,
   start: number,
-  frequency: number,
   duration: number,
+  frequency: number,
   volume: number,
 ) {
-  const master = ctx.createGain();
-  master.connect(ctx.destination);
-  master.gain.setValueAtTime(0.0001, start);
-  master.gain.exponentialRampToValueAtTime(volume, start + 0.015);
-  master.gain.exponentialRampToValueAtTime(volume * 0.35, start + duration * 0.35);
-  master.gain.exponentialRampToValueAtTime(0.0001, start + duration);
-
-  // Ana ton
-  const fund = ctx.createOscillator();
-  fund.type = "sine";
-  fund.frequency.setValueAtTime(frequency, start);
-  fund.connect(master);
-  fund.start(start);
-  fund.stop(start + duration);
-
-  // Parlak üst harmonik (zil hissi)
-  const harm = ctx.createOscillator();
-  const harmGain = ctx.createGain();
-  harm.type = "triangle";
-  harm.frequency.setValueAtTime(frequency * 2.01, start);
-  harmGain.gain.setValueAtTime(volume * 0.45, start);
-  harmGain.gain.exponentialRampToValueAtTime(0.0001, start + duration * 0.7);
-  harm.connect(harmGain);
-  harmGain.connect(master);
-  harm.start(start);
-  harm.stop(start + duration);
-
-  // Kısa “tik” attack
-  const click = ctx.createOscillator();
-  const clickGain = ctx.createGain();
-  click.type = "sine";
-  click.frequency.setValueAtTime(frequency * 3.2, start);
-  clickGain.gain.setValueAtTime(volume * 0.25, start);
-  clickGain.gain.exponentialRampToValueAtTime(0.0001, start + 0.06);
-  click.connect(clickGain);
-  clickGain.connect(master);
-  click.start(start);
-  click.stop(start + 0.08);
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.type = "square";
+  osc.frequency.setValueAtTime(frequency, start);
+  gain.gain.setValueAtTime(0.0001, start);
+  gain.gain.exponentialRampToValueAtTime(volume, start + 0.012);
+  gain.gain.exponentialRampToValueAtTime(volume * 0.55, start + duration * 0.45);
+  gain.gain.exponentialRampToValueAtTime(0.0001, start + duration);
+  osc.connect(gain);
+  gain.connect(ctx.destination);
+  osc.start(start);
+  osc.stop(start + duration + 0.02);
 }
 
 /**
- * Yeni sipariş zili — yumuşak ama dikkat çeken 3 notalı çan.
- * (Do5 → Mi5 → Sol5 + tekrar)
+ * Yeni sipariş alarmı — yüksek, tekrarlayan bip (mutfakta duyulur).
+ * @returns çaldı mı
  */
-export async function playKitchenOrderAlert(): Promise<void> {
+export async function playKitchenOrderAlert(): Promise<boolean> {
   try {
     const ctx = getAudioContext();
-    if (!ctx) return;
+    if (!ctx) {
+      setArmed(false);
+      return false;
+    }
+
     if (ctx.state === "suspended") {
       await ctx.resume();
     }
-    if (ctx.state !== "running") return;
+    if (ctx.state !== "running") {
+      setArmed(false);
+      return false;
+    }
+    setArmed(true);
 
     const now = ctx.currentTime;
-    // C5, E5, G5 — net “sipariş geldi” melodisi
-    const notes: [number, number][] = [
-      [0, 523.25],
-      [0.22, 659.25],
-      [0.44, 783.99],
-      [0.85, 523.25],
-      [1.07, 659.25],
-      [1.29, 783.99],
+    // 3 tur: yüksek–daha yüksek–yüksek
+    const pattern: [number, number][] = [
+      [0, 880],
+      [0.22, 1175],
+      [0.44, 880],
+      [0.75, 1319],
+      [1.05, 880],
+      [1.27, 1175],
+      [1.49, 880],
+      [1.8, 1319],
     ];
 
-    for (const [offset, freq] of notes) {
-      playBell(ctx, now + offset, freq, 0.55, 0.28);
+    for (const [offset, freq] of pattern) {
+      tone(ctx, now + offset, 0.18, freq, 0.42);
     }
+    return true;
   } catch {
-    // Ses engelliyse sessiz devam
+    setArmed(false);
+    return false;
   }
 }

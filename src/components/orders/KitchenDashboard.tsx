@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/utils";
 import {
   playKitchenOrderAlert,
+  subscribeKitchenAudioArmed,
   unlockKitchenAudio,
 } from "@/lib/orders/kitchen-alert";
 
@@ -64,8 +65,30 @@ export function KitchenDashboard() {
   const [banner, setBanner] = useState<string | null>(null);
   const [highlightIds, setHighlightIds] = useState<Set<string>>(new Set());
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [audioArmed, setAudioArmed] = useState(false);
   const knownIds = useRef<Set<string>>(new Set());
   const initialLoadDone = useRef(false);
+
+  const announceNewOrder = useCallback((order: OrderRecord) => {
+    if (knownIds.current.has(order.id)) return;
+    knownIds.current.add(order.id);
+    setBanner(`Yeni sipariş: ${order.order_number}`);
+    setHighlightIds((h) => new Set(h).add(order.id));
+    void playKitchenOrderAlert().then((played) => {
+      if (!played) {
+        setBanner(
+          `Yeni sipariş: ${order.order_number} — ses kapalı, “Ses test et”e basın`,
+        );
+      }
+    });
+    window.setTimeout(() => {
+      setHighlightIds((h) => {
+        const next = new Set(h);
+        next.delete(order.id);
+        return next;
+      });
+    }, 12000);
+  }, []);
 
   const loadOrders = useCallback(async (opts?: { silent?: boolean }) => {
     try {
@@ -88,30 +111,17 @@ export function KitchenDashboard() {
         normalizeOrder(row as Record<string, unknown>),
       );
 
-      setOrders((prev) => {
-        if (initialLoadDone.current && prev.length > 0) {
-          const prevIds = new Set(prev.map((o) => o.id));
-          for (const order of list) {
-            if (!prevIds.has(order.id) && !knownIds.current.has(order.id)) {
-              knownIds.current.add(order.id);
-              setBanner(`Yeni sipariş: ${order.order_number}`);
-              setHighlightIds((h) => new Set(h).add(order.id));
-              playKitchenOrderAlert();
-              window.setTimeout(() => {
-                setHighlightIds((h) => {
-                  const next = new Set(h);
-                  next.delete(order.id);
-                  return next;
-                });
-              }, 12000);
-              break;
-            }
+      if (initialLoadDone.current) {
+        for (const order of list) {
+          if (!knownIds.current.has(order.id)) {
+            announceNewOrder(order);
+            break;
           }
         }
-        return list;
-      });
+      }
 
       knownIds.current = new Set(list.map((o) => o.id));
+      setOrders(list);
       setError(null);
     } catch {
       if (!opts?.silent) {
@@ -121,31 +131,49 @@ export function KitchenDashboard() {
       setLoading(false);
       initialLoadDone.current = true;
     }
-  }, []);
+  }, [announceNewOrder]);
 
   useEffect(() => {
     void loadOrders();
   }, [loadOrders]);
 
-  /** Tarayıcı ses kilidini aç — panelde herhangi bir tıklama yeterli */
+  useEffect(() => subscribeKitchenAudioArmed(setAudioArmed), []);
+
+  /** Ses kilidini her etkileşimde ve sekme geri gelince yenile */
   useEffect(() => {
     const unlock = () => {
       void unlockKitchenAudio();
     };
-    document.addEventListener("pointerdown", unlock, { once: true });
-    document.addEventListener("keydown", unlock, { once: true });
+    document.addEventListener("pointerdown", unlock);
+    document.addEventListener("keydown", unlock);
+    document.addEventListener("touchstart", unlock, { passive: true });
+    const onVisible = () => {
+      if (document.visibilityState === "visible") {
+        void unlockKitchenAudio();
+      }
+    };
+    document.addEventListener("visibilitychange", onVisible);
     return () => {
       document.removeEventListener("pointerdown", unlock);
       document.removeEventListener("keydown", unlock);
+      document.removeEventListener("touchstart", unlock);
+      document.removeEventListener("visibilitychange", onVisible);
     };
   }, []);
+
+  /** Realtime kaçsa bile sipariş kaçmasın */
+  useEffect(() => {
+    const pollTimer = window.setInterval(() => {
+      void loadOrders({ silent: true });
+    }, 6000);
+    return () => window.clearInterval(pollTimer);
+  }, [loadOrders]);
 
   useEffect(() => {
     let cancelled = false;
     let channel: ReturnType<ReturnType<typeof createClient>["channel"]> | null =
       null;
     let supabase: ReturnType<typeof createClient> | null = null;
-    let pollTimer: number | undefined;
     let retryTimer: number | undefined;
 
     async function connectRealtime() {
@@ -184,17 +212,7 @@ export function KitchenDashboard() {
                   initialLoadDone.current &&
                   !knownIds.current.has(order.id)
                 ) {
-                  knownIds.current.add(order.id);
-                  setBanner(`Yeni sipariş: ${order.order_number}`);
-                  setHighlightIds((prev) => new Set(prev).add(order.id));
-                  playKitchenOrderAlert();
-                  window.setTimeout(() => {
-                    setHighlightIds((prev) => {
-                      const next = new Set(prev);
-                      next.delete(order.id);
-                      return next;
-                    });
-                  }, 12000);
+                  announceNewOrder(order);
                 } else {
                   knownIds.current.add(order.id);
                 }
@@ -228,11 +246,6 @@ export function KitchenDashboard() {
             }
             if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
               setConnection("disconnected");
-              if (!pollTimer) {
-                pollTimer = window.setInterval(() => {
-                  void loadOrders({ silent: true });
-                }, 8000);
-              }
               retryTimer = window.setTimeout(() => {
                 if (cancelled || !supabase || !channel) return;
                 void supabase.removeChannel(channel);
@@ -247,11 +260,6 @@ export function KitchenDashboard() {
           setError(
             "Canlı bağlantı kurulamadı. Siparişler birkaç saniyede bir yenilenecek.",
           );
-          if (!pollTimer) {
-            pollTimer = window.setInterval(() => {
-              void loadOrders({ silent: true });
-            }, 8000);
-          }
         }
       }
     }
@@ -260,13 +268,12 @@ export function KitchenDashboard() {
 
     return () => {
       cancelled = true;
-      if (pollTimer) window.clearInterval(pollTimer);
       if (retryTimer) window.clearTimeout(retryTimer);
       if (channel && supabase) {
         void supabase.removeChannel(channel);
       }
     };
-  }, [loadOrders]);
+  }, [announceNewOrder]);
 
   useEffect(() => {
     if (!banner) return;
@@ -316,6 +323,20 @@ export function KitchenDashboard() {
 
   return (
     <div className="space-y-6">
+      {!audioArmed ? (
+        <button
+          type="button"
+          className="w-full rounded-xl border border-amber-400/50 bg-amber-950/50 px-4 py-3 text-center text-sm font-semibold text-amber-100 shadow-lg"
+          onClick={() => {
+            void unlockKitchenAudio().then((ok) => {
+              if (ok) void playKitchenOrderAlert();
+            });
+          }}
+        >
+          Ses kapalı — sipariş alarmı için buraya dokunun
+        </button>
+      ) : null}
+
       {banner ? (
         <div
           className="rounded-xl border border-[#d4af37]/50 bg-[#d4af37]/15 px-4 py-3 text-center text-sm font-semibold text-[#fde68a] shadow-lg"
@@ -345,6 +366,10 @@ export function KitchenDashboard() {
                 : connection === "connecting"
                   ? "Bağlanıyor…"
                   : "Kesildi — siparişler yenilenmeye devam eder"}
+            </span>
+            {" · "}
+            <span className={audioArmed ? "text-emerald-400" : "text-amber-300"}>
+              {audioArmed ? "Ses açık" : "Ses kapalı"}
             </span>
           </p>
           <Button
