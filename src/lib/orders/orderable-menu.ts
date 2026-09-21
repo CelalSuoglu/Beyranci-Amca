@@ -1,5 +1,5 @@
 import { menuCategories } from "@/lib/menu-data";
-import { productRequiresSpice } from "./spice";
+import { getProductModifiers, type SpiceLevel } from "./spice";
 
 export type OrderableProduct = {
   id: string;
@@ -9,7 +9,11 @@ export type OrderableProduct = {
   description?: string;
   /** Birim fiyat (TL, sayısal) */
   unitPrice: number;
-  /** Acı seçeneği zorunlu mu (beyran / kebap / lahmacun) */
+  /** İzin verilen acı seçenekleri; null ise acı seçilmez */
+  spiceLevels: readonly SpiceLevel[] | null;
+  /** Beyran için sarımsak seçeneği zorunlu */
+  requiresGarlic: boolean;
+  /** Geriye dönük kısayol: spiceLevels dolu mu */
   requiresSpice: boolean;
 };
 
@@ -51,6 +55,7 @@ function buildProducts(): OrderableProduct[] {
           const unitPrice = parsePriceTl(option.price);
           if (unitPrice === null) continue;
           const name = `${item.name} — ${option.name}`;
+          const modifiers = getProductModifiers(name);
           products.push({
             id: `${category.id}-${slugify(name)}`,
             categoryId: category.id,
@@ -58,7 +63,9 @@ function buildProducts(): OrderableProduct[] {
             name,
             description: item.description,
             unitPrice,
-            requiresSpice: productRequiresSpice(name),
+            spiceLevels: modifiers.spiceLevels,
+            requiresGarlic: modifiers.requiresGarlic,
+            requiresSpice: modifiers.spiceLevels !== null,
           });
         }
         continue;
@@ -68,29 +75,37 @@ function buildProducts(): OrderableProduct[] {
       const unitPrice = parsePriceTl(item.price);
       if (unitPrice === null) continue;
 
-      products.push({
-        id: `${category.id}-${slugify(item.name)}`,
-        categoryId: category.id,
-        categoryTitle: category.title,
-        name: item.name,
-        description:
-          "description" in item ? item.description : undefined,
-        unitPrice,
-        requiresSpice: productRequiresSpice(item.name),
-      });
+      {
+        const modifiers = getProductModifiers(item.name);
+        products.push({
+          id: `${category.id}-${slugify(item.name)}`,
+          categoryId: category.id,
+          categoryTitle: category.title,
+          name: item.name,
+          description:
+            "description" in item ? item.description : undefined,
+          unitPrice,
+          spiceLevels: modifiers.spiceLevels,
+          requiresGarlic: modifiers.requiresGarlic,
+          requiresSpice: modifiers.spiceLevels !== null,
+        });
+      }
     }
 
     if (category.subSectionItems?.length) {
       for (const item of category.subSectionItems) {
         const unitPrice = parsePriceTl(item.price);
         if (unitPrice === null) continue;
+        const modifiers = getProductModifiers(item.name);
         products.push({
           id: `${category.id}-sub-${slugify(item.name)}`,
           categoryId: category.id,
           categoryTitle: category.subSectionTitle ?? category.title,
           name: item.name,
           unitPrice,
-          requiresSpice: productRequiresSpice(item.name),
+          spiceLevels: modifiers.spiceLevels,
+          requiresGarlic: modifiers.requiresGarlic,
+          requiresSpice: modifiers.spiceLevels !== null,
         });
       }
     }

@@ -3,8 +3,13 @@ import { MIN_ORDER_TOTAL_TL, ORDER_STATUSES, PAYMENT_METHODS } from "./constants
 import { getOrderableProduct } from "./orderable-menu";
 import { normalizeTurkishPhone } from "./format";
 import {
+  GARLIC_LEVELS,
+  GARLIC_LEVEL_LABELS,
   SPICE_LEVELS,
   SPICE_LEVEL_LABELS,
+  formatModifierLabels,
+  isSpiceAllowed,
+  type GarlicLevel,
   type SpiceLevel,
 } from "./spice";
 
@@ -12,6 +17,7 @@ export const cartItemInputSchema = z.object({
   productId: z.string().min(1),
   quantity: z.number().int().min(1).max(99),
   spiceLevel: z.enum(SPICE_LEVELS).optional(),
+  garlicLevel: z.enum(GARLIC_LEVELS).optional(),
 });
 
 export const createOrderInputSchema = z.object({
@@ -55,6 +61,7 @@ export type ValidatedOrderLine = {
   quantity: number;
   lineTotal: number;
   spiceLevel: SpiceLevel | null;
+  garlicLevel: GarlicLevel | null;
 };
 
 export type ValidatedOrder = {
@@ -98,11 +105,23 @@ export function validateAndPriceOrder(
     }
 
     let spiceLevel: SpiceLevel | null = null;
-    if (product.requiresSpice) {
+    if (product.spiceLevels) {
       if (!item.spiceLevel) {
+        const labels = product.spiceLevels
+          .map((level) => SPICE_LEVEL_LABELS[level])
+          .join(" / ");
         return {
           ok: false,
-          message: `${product.name} için acı seçeneği zorunludur (Acılı / Az acılı / Acısız).`,
+          message: `${product.name} için acı seçeneği zorunludur (${labels}).`,
+        };
+      }
+      if (!isSpiceAllowed(item.spiceLevel, product.spiceLevels)) {
+        const labels = product.spiceLevels
+          .map((level) => SPICE_LEVEL_LABELS[level])
+          .join(" / ");
+        return {
+          ok: false,
+          message: `${product.name} için geçerli acı seçenekleri: ${labels}.`,
         };
       }
       spiceLevel = item.spiceLevel;
@@ -113,19 +132,39 @@ export function validateAndPriceOrder(
       };
     }
 
-    const lineKey = spiceLevel
-      ? `${item.productId}__${spiceLevel}`
-      : item.productId;
+    let garlicLevel: GarlicLevel | null = null;
+    if (product.requiresGarlic) {
+      if (!item.garlicLevel) {
+        return {
+          ok: false,
+          message: `${product.name} için sarımsak seçeneği zorunludur (${GARLIC_LEVEL_LABELS.az_sarimsakli} / ${GARLIC_LEVEL_LABELS.bol_sarimsakli}).`,
+        };
+      }
+      garlicLevel = item.garlicLevel;
+    } else if (item.garlicLevel) {
+      return {
+        ok: false,
+        message: `${product.name} için sarımsak seçeneği geçerli değil.`,
+      };
+    }
+
+    const lineKey = [
+      item.productId,
+      spiceLevel ?? "",
+      garlicLevel ?? "",
+    ].join("__");
     if (seen.has(lineKey)) {
       return {
         ok: false,
-        message: "Sepette aynı ürün ve acı seçeneği birden fazla kez gönderilemez.",
+        message:
+          "Sepette aynı ürün ve seçenek kombinasyonu birden fazla kez gönderilemez.",
       };
     }
     seen.add(lineKey);
 
-    const displayName = spiceLevel
-      ? `${product.name} (${SPICE_LEVEL_LABELS[spiceLevel]})`
+    const modifierLabel = formatModifierLabels(spiceLevel, garlicLevel);
+    const displayName = modifierLabel
+      ? `${product.name} (${modifierLabel})`
       : product.name;
 
     const lineTotal =
@@ -138,6 +177,7 @@ export function validateAndPriceOrder(
       quantity: item.quantity,
       lineTotal,
       spiceLevel,
+      garlicLevel,
     });
   }
 

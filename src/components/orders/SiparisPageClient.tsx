@@ -11,8 +11,12 @@ import {
   type OrderableProduct,
 } from "@/lib/orders/orderable-menu";
 import {
-  SPICE_LEVELS,
+  GARLIC_LEVELS,
+  GARLIC_LEVEL_LABELS,
   SPICE_LEVEL_LABELS,
+  defaultSpiceLevel,
+  formatModifierLabels,
+  type GarlicLevel,
   type SpiceLevel,
 } from "@/lib/orders/spice";
 import { site } from "@/lib/site";
@@ -23,6 +27,7 @@ type CartLine = {
   productId: string;
   quantity: number;
   spiceLevel: SpiceLevel | null;
+  garlicLevel: GarlicLevel | null;
 };
 
 type SuccessState = {
@@ -30,8 +35,12 @@ type SuccessState = {
   total: number;
 };
 
-function cartKey(productId: string, spice: SpiceLevel | null) {
-  return spice ? `${productId}__${spice}` : productId;
+function cartKey(
+  productId: string,
+  spice: SpiceLevel | null,
+  garlic: GarlicLevel | null,
+) {
+  return [productId, spice ?? "", garlic ?? ""].join("__");
 }
 
 export function SiparisPageClient() {
@@ -49,6 +58,9 @@ export function SiparisPageClient() {
   const [cart, setCart] = useState<CartLine[]>([]);
   const [qtys, setQtys] = useState<Record<string, number>>({});
   const [spicePick, setSpicePick] = useState<Record<string, SpiceLevel>>({});
+  const [garlicPick, setGarlicPick] = useState<Record<string, GarlicLevel>>(
+    {},
+  );
   const [customerName, setCustomerName] = useState("");
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
@@ -63,12 +75,16 @@ export function SiparisPageClient() {
       .map((line) => {
         const product = productMap.get(line.productId);
         if (!product || line.quantity < 1) return null;
+        const modifierLabel = formatModifierLabels(
+          line.spiceLevel,
+          line.garlicLevel,
+        );
         return {
           ...line,
           product,
           lineTotal: Math.round(product.unitPrice * line.quantity * 100) / 100,
-          displayName: line.spiceLevel
-            ? `${product.name} (${SPICE_LEVEL_LABELS[line.spiceLevel]})`
+          displayName: modifierLabel
+            ? `${product.name} (${modifierLabel})`
             : product.name,
         };
       })
@@ -77,6 +93,7 @@ export function SiparisPageClient() {
       productId: string;
       quantity: number;
       spiceLevel: SpiceLevel | null;
+      garlicLevel: GarlicLevel | null;
       product: OrderableProduct;
       lineTotal: number;
       displayName: string;
@@ -105,14 +122,23 @@ export function SiparisPageClient() {
     }));
   }
 
-  function getSpice(productId: string): SpiceLevel {
-    return spicePick[productId] ?? "az_acili";
+  function getSpice(product: OrderableProduct): SpiceLevel | null {
+    if (!product.spiceLevels) return null;
+    const picked = spicePick[product.id];
+    if (picked && product.spiceLevels.includes(picked)) return picked;
+    return defaultSpiceLevel(product.spiceLevels);
+  }
+
+  function getGarlic(product: OrderableProduct): GarlicLevel | null {
+    if (!product.requiresGarlic) return null;
+    return garlicPick[product.id] ?? "az_sarimsakli";
   }
 
   function addToCart(product: OrderableProduct) {
     const quantity = getQty(product.id);
-    const spice = product.requiresSpice ? getSpice(product.id) : null;
-    const key = cartKey(product.id, spice);
+    const spice = getSpice(product);
+    const garlic = getGarlic(product);
+    const key = cartKey(product.id, spice, garlic);
 
     setCart((prev) => {
       const existing = prev.find((line) => line.key === key);
@@ -133,6 +159,7 @@ export function SiparisPageClient() {
           productId: product.id,
           quantity,
           spiceLevel: spice,
+          garlicLevel: garlic,
         },
       ];
     });
@@ -176,6 +203,7 @@ export function SiparisPageClient() {
               productId: line.product.id,
               quantity: line.quantity,
               ...(line.spiceLevel ? { spiceLevel: line.spiceLevel } : {}),
+              ...(line.garlicLevel ? { garlicLevel: line.garlicLevel } : {}),
             })),
           }),
         });
@@ -273,8 +301,8 @@ export function SiparisPageClient() {
           <strong className="font-semibold text-[#e8c76a]">
             {formatTry(MIN_ORDER_TOTAL_TL)}
           </strong>
-          . Beyran, kebap ve lahmacun için acı seçeneği seçin. Ödeme kapıda
-          nakit veya kart ile alınır.
+          . Lahmacun için acı, beyran için acı ve sarımsak, kebap için acı
+          seçeneği seçin. Ödeme kapıda nakit veya kart ile alınır.
         </p>
         <div className="mt-4 flex flex-wrap gap-3 text-sm">
           <Link
@@ -307,7 +335,8 @@ export function SiparisPageClient() {
               <div className="mt-4 space-y-3">
                 {category.products.map((product) => {
                   const qty = getQty(product.id);
-                  const spice = getSpice(product.id);
+                  const spice = getSpice(product);
+                  const garlic = getGarlic(product);
                   return (
                     <article
                       key={product.id}
@@ -329,13 +358,13 @@ export function SiparisPageClient() {
                         </p>
                       </div>
 
-                      {product.requiresSpice ? (
+                      {product.spiceLevels ? (
                         <fieldset className="mt-4">
                           <legend className="text-xs font-semibold uppercase tracking-[0.16em] text-[#d4af37]/90">
                             Acı seçeneği
                           </legend>
                           <div className="mt-2 flex flex-wrap gap-2">
-                            {SPICE_LEVELS.map((level) => (
+                            {product.spiceLevels.map((level) => (
                               <label
                                 key={level}
                                 className={cn(
@@ -359,6 +388,42 @@ export function SiparisPageClient() {
                                   className="sr-only"
                                 />
                                 {SPICE_LEVEL_LABELS[level]}
+                              </label>
+                            ))}
+                          </div>
+                        </fieldset>
+                      ) : null}
+
+                      {product.requiresGarlic ? (
+                        <fieldset className="mt-3">
+                          <legend className="text-xs font-semibold uppercase tracking-[0.16em] text-[#d4af37]/90">
+                            Sarımsak seçeneği
+                          </legend>
+                          <div className="mt-2 flex flex-wrap gap-2">
+                            {GARLIC_LEVELS.map((level) => (
+                              <label
+                                key={level}
+                                className={cn(
+                                  "inline-flex min-h-10 cursor-pointer items-center rounded-full border px-3 text-sm font-medium transition-colors",
+                                  garlic === level
+                                    ? "border-[#d4af37]/55 bg-[#d4af37]/15 text-[#fde68a]"
+                                    : "border-white/12 text-[var(--foreground-muted)] hover:border-white/25",
+                                )}
+                              >
+                                <input
+                                  type="radio"
+                                  name={`garlic-${product.id}`}
+                                  value={level}
+                                  checked={garlic === level}
+                                  onChange={() =>
+                                    setGarlicPick((prev) => ({
+                                      ...prev,
+                                      [product.id]: level,
+                                    }))
+                                  }
+                                  className="sr-only"
+                                />
+                                {GARLIC_LEVEL_LABELS[level]}
                               </label>
                             ))}
                           </div>

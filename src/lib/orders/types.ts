@@ -1,5 +1,5 @@
 import type { OrderStatus, PaymentMethod } from "./constants";
-import type { SpiceLevel } from "./spice";
+import type { GarlicLevel, SpiceLevel } from "./spice";
 
 export type OrderItemRecord = {
   productId: string;
@@ -8,6 +8,7 @@ export type OrderItemRecord = {
   quantity: number;
   lineTotal: number;
   spiceLevel?: SpiceLevel | null;
+  garlicLevel?: GarlicLevel | null;
 };
 
 export type OrderRecord = {
