@@ -106,6 +106,8 @@ GRANT ALL ON TABLE public.orders TO service_role;
 GRANT USAGE, SELECT ON SEQUENCE public.order_number_seq TO service_role;
 
 -- Realtime
+ALTER TABLE public.orders REPLICA IDENTITY FULL;
+
 DO $$
 BEGIN
   IF NOT EXISTS (

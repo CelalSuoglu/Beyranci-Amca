@@ -87,7 +87,7 @@ export function KitchenDashboard() {
   const knownIds = useRef<Set<string>>(new Set());
   const initialLoadDone = useRef(false);
 
-  const loadOrders = useCallback(async () => {
+  const loadOrders = useCallback(async (opts?: { silent?: boolean }) => {
     try {
       const supabase = createClient();
       const { data, error: fetchError } = await supabase
@@ -97,7 +97,9 @@ export function KitchenDashboard() {
         .limit(200);
 
       if (fetchError) {
-        setError("Siparişler yüklenemedi. Oturumunuzu kontrol edin.");
+        if (!opts?.silent) {
+          setError("Siparişler yüklenemedi. Oturumunuzu kontrol edin.");
+        }
         setLoading(false);
         return;
       }
@@ -105,11 +107,36 @@ export function KitchenDashboard() {
       const list = (data ?? []).map((row) =>
         normalizeOrder(row as Record<string, unknown>),
       );
-      setOrders(list);
+
+      setOrders((prev) => {
+        if (initialLoadDone.current && prev.length > 0) {
+          const prevIds = new Set(prev.map((o) => o.id));
+          for (const order of list) {
+            if (!prevIds.has(order.id) && !knownIds.current.has(order.id)) {
+              knownIds.current.add(order.id);
+              setBanner(`Yeni sipariş: ${order.order_number}`);
+              setHighlightIds((h) => new Set(h).add(order.id));
+              playNotificationSound();
+              window.setTimeout(() => {
+                setHighlightIds((h) => {
+                  const next = new Set(h);
+                  next.delete(order.id);
+                  return next;
+                });
+              }, 12000);
+              break;
+            }
+          }
+        }
+        return list;
+      });
+
       knownIds.current = new Set(list.map((o) => o.id));
       setError(null);
     } catch {
-      setError("Bağlantı kurulamadı.");
+      if (!opts?.silent) {
+        setError("Bağlantı kurulamadı.");
+      }
     } finally {
       setLoading(false);
       initialLoadDone.current = true;
@@ -125,84 +152,128 @@ export function KitchenDashboard() {
     let channel: ReturnType<ReturnType<typeof createClient>["channel"]> | null =
       null;
     let supabase: ReturnType<typeof createClient> | null = null;
+    let pollTimer: number | undefined;
+    let retryTimer: number | undefined;
 
-    try {
-      supabase = createClient();
-      channel = supabase
-        .channel("kitchen-orders")
-        .on(
-          "postgres_changes",
-          { event: "*", schema: "public", table: "orders" },
-          (payload) => {
-            if (payload.eventType === "INSERT" && payload.new) {
-              const order = normalizeOrder(
-                payload.new as Record<string, unknown>,
-              );
-              setOrders((prev) => {
-                if (prev.some((o) => o.id === order.id)) return prev;
-                return [order, ...prev];
-              });
+    async function connectRealtime() {
+      try {
+        supabase = createClient();
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
 
-              if (
-                initialLoadDone.current &&
-                !knownIds.current.has(order.id)
-              ) {
-                knownIds.current.add(order.id);
-                setBanner(`Yeni sipariş: ${order.order_number}`);
-                setHighlightIds((prev) => new Set(prev).add(order.id));
-                playNotificationSound();
-                window.setTimeout(() => {
-                  setHighlightIds((prev) => {
-                    const next = new Set(prev);
-                    next.delete(order.id);
-                    return next;
-                  });
-                }, 12000);
-              } else {
-                knownIds.current.add(order.id);
+        if (cancelled) return;
+
+        if (!session) {
+          setConnection("disconnected");
+          setError("Oturum bulunamadı. Tekrar giriş yapın.");
+          return;
+        }
+
+        setConnection("connecting");
+
+        channel = supabase
+          .channel(`kitchen-orders-${session.user.id}`)
+          .on(
+            "postgres_changes",
+            { event: "*", schema: "public", table: "orders" },
+            (payload) => {
+              if (payload.eventType === "INSERT" && payload.new) {
+                const order = normalizeOrder(
+                  payload.new as Record<string, unknown>,
+                );
+                setOrders((prev) => {
+                  if (prev.some((o) => o.id === order.id)) return prev;
+                  return [order, ...prev];
+                });
+
+                if (
+                  initialLoadDone.current &&
+                  !knownIds.current.has(order.id)
+                ) {
+                  knownIds.current.add(order.id);
+                  setBanner(`Yeni sipariş: ${order.order_number}`);
+                  setHighlightIds((prev) => new Set(prev).add(order.id));
+                  playNotificationSound();
+                  window.setTimeout(() => {
+                    setHighlightIds((prev) => {
+                      const next = new Set(prev);
+                      next.delete(order.id);
+                      return next;
+                    });
+                  }, 12000);
+                } else {
+                  knownIds.current.add(order.id);
+                }
               }
-            }
 
-            if (payload.eventType === "UPDATE" && payload.new) {
-              const order = normalizeOrder(
-                payload.new as Record<string, unknown>,
-              );
-              setOrders((prev) =>
-                prev.map((o) => (o.id === order.id ? order : o)),
-              );
-            }
+              if (payload.eventType === "UPDATE" && payload.new) {
+                const order = normalizeOrder(
+                  payload.new as Record<string, unknown>,
+                );
+                setOrders((prev) =>
+                  prev.map((o) => (o.id === order.id ? order : o)),
+                );
+              }
 
-            if (payload.eventType === "DELETE" && payload.old) {
-              const id = String(
-                (payload.old as Record<string, unknown>).id ?? "",
-              );
-              if (!id) return;
-              setOrders((prev) => prev.filter((o) => o.id !== id));
-              knownIds.current.delete(id);
+              if (payload.eventType === "DELETE" && payload.old) {
+                const id = String(
+                  (payload.old as Record<string, unknown>).id ?? "",
+                );
+                if (!id) return;
+                setOrders((prev) => prev.filter((o) => o.id !== id));
+                knownIds.current.delete(id);
+              }
+            },
+          )
+          .subscribe((status) => {
+            if (cancelled) return;
+            if (status === "SUBSCRIBED") {
+              setConnection("live");
+              setError(null);
+              return;
             }
-          },
-        )
-        .subscribe((status) => {
-          if (cancelled) return;
-          if (status === "SUBSCRIBED") setConnection("live");
-          else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
-            setConnection("disconnected");
-          } else if (status === "CLOSED") {
-            setConnection("disconnected");
+            if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
+              setConnection("disconnected");
+              if (!pollTimer) {
+                pollTimer = window.setInterval(() => {
+                  void loadOrders({ silent: true });
+                }, 8000);
+              }
+              retryTimer = window.setTimeout(() => {
+                if (cancelled || !supabase || !channel) return;
+                void supabase.removeChannel(channel);
+                channel = null;
+                void connectRealtime();
+              }, 4000);
+            }
+          });
+      } catch {
+        if (!cancelled) {
+          setConnection("disconnected");
+          setError(
+            "Canlı bağlantı kurulamadı. Siparişler birkaç saniyede bir yenilenecek.",
+          );
+          if (!pollTimer) {
+            pollTimer = window.setInterval(() => {
+              void loadOrders({ silent: true });
+            }, 8000);
           }
-        });
-    } catch {
-      setConnection("disconnected");
-      setError("Gerçek zamanlı bağlantı kurulamadı.");
+        }
+      }
     }
+
+    void connectRealtime();
 
     return () => {
       cancelled = true;
+      if (pollTimer) window.clearInterval(pollTimer);
+      if (retryTimer) window.clearTimeout(retryTimer);
       if (channel && supabase) {
         void supabase.removeChannel(channel);
       }
     };
-  }, []);
+  }, [loadOrders]);
 
   useEffect(() => {
     if (!banner) return;
