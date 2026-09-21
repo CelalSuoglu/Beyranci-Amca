@@ -78,25 +78,23 @@ export function HeroSection() {
           {brand.slogan}
         </p>
 
-        <div className="mt-10 flex w-full max-w-md flex-col gap-3 sm:mt-11 sm:flex-row sm:justify-center sm:gap-4">
+            <div className="mt-10 flex w-full max-w-md flex-col gap-3 sm:mt-11 sm:flex-row sm:justify-center sm:gap-4">
           <Button
-            href="#menu"
+            href="/siparis"
             variant="primary"
             className="min-h-[3rem] w-full justify-center sm:w-auto sm:min-w-[12rem]"
           >
-            Menüyü Gör
+            Paket Sipariş
           </Button>
           <Button
-            href={site.googleMapsOpenUrl}
-            target="_blank"
-            rel="noopener noreferrer"
+            href="#menu"
             variant="outline"
             className={cn(
               "min-h-[3rem] w-full justify-center border-[#d4af37]/40 bg-black/35 text-[#faf6ef] backdrop-blur-sm sm:w-auto sm:min-w-[12rem]",
               "hover:border-[#f59e0b]/80 hover:bg-black/45 hover:text-[#fde68a]",
             )}
           >
-            Beni Beyrancı Amca&apos;ya Götür
+            Menüyü Gör
           </Button>
         </div>
       </Container>

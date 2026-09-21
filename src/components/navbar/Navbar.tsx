@@ -77,12 +77,20 @@ export function Navbar() {
             {item.label}
           </a>
         ))}
-        <div className="mt-4 border-t border-white/10 pt-4">
+        <div className="mt-4 space-y-3 border-t border-white/10 pt-4">
+          <Button
+            href="/siparis"
+            className="w-full"
+            onClick={() => setOpen(false)}
+          >
+            Paket sipariş
+          </Button>
           {site.whatsapp ? (
             <Button
               href={site.whatsapp}
               target="_blank"
               rel="noopener noreferrer"
+              variant="outline"
               className="w-full"
               onClick={() => setOpen(false)}
             >
@@ -91,6 +99,7 @@ export function Navbar() {
           ) : (
             <Button
               href="#contact"
+              variant="outline"
               className="w-full"
               onClick={(e) => {
                 e.preventDefault();
@@ -241,12 +250,19 @@ export function Navbar() {
           </nav>
 
           <div className="hidden items-center gap-2 lg:flex">
+            <Button
+              href="/siparis"
+              variant="primary"
+              className="!px-5 !py-2.5 text-xs"
+            >
+              Sipariş ver
+            </Button>
             {site.whatsapp ? (
               <Button
                 href={site.whatsapp}
                 target="_blank"
                 rel="noopener noreferrer"
-                variant="primary"
+                variant="outline"
                 className="!px-5 !py-2.5 text-xs"
               >
                 WhatsApp
@@ -254,7 +270,7 @@ export function Navbar() {
             ) : (
               <Button
                 href="#contact"
-                variant="primary"
+                variant="outline"
                 className="!px-5 !py-2.5 text-xs"
                 onClick={(e) => {
                   e.preventDefault();
