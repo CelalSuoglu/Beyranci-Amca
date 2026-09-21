@@ -1,5 +1,5 @@
 /** Minimum paket sipariş tutarı (TL) */
-export const MIN_ORDER_TOTAL_TL = 1000;
+export const MIN_ORDER_TOTAL_TL = 1250;
 
 export const ORDER_STATUSES = [
   "new",

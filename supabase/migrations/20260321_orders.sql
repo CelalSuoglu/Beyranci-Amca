@@ -66,7 +66,7 @@ CREATE TABLE IF NOT EXISTS public.orders (
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now(),
   CONSTRAINT orders_items_is_array CHECK (jsonb_typeof(items) = 'array'),
-  CONSTRAINT orders_min_total CHECK (total >= 1000)
+  CONSTRAINT orders_min_total CHECK (total >= 1250)
 );
 
 CREATE INDEX IF NOT EXISTS orders_created_at_idx ON public.orders (created_at DESC);
