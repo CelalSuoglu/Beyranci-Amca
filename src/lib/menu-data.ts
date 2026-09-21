@@ -85,6 +85,7 @@ export const menuCategories: MenuCategory[] = [
       { name: "Sucuklu Kaşarlı Pide", price: "325,00 TL" },
       { name: "Kuşbaşılı Kaşarlı Pide", price: "425,00 TL" },
       { name: "Kavurma Kaşarlı Pide", price: "450,00 TL" },
+      { name: "Lor Böreği", price: "125,00 TL" },
     ],
   },
   {
