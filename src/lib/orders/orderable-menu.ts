@@ -47,8 +47,12 @@ function slugify(input: string): string {
 
 /** Paket siparişte sunulmayan ürünler (QR menüde kalabilir) */
 function isExcludedFromPackage(name: string): boolean {
-  const n = name.toLocaleLowerCase("tr-TR");
-  return n.includes("türk kahvesi") || n.includes("turk kahvesi");
+  const n = name.toLocaleLowerCase("tr-TR").trim();
+  return (
+    n.includes("türk kahvesi") ||
+    n.includes("turk kahvesi") ||
+    n === "çay"
+  );
 }
 
 function buildProducts(): OrderableProduct[] {
