@@ -12,6 +12,10 @@ import { formatOrderTime, formatPhoneDisplay, formatTry } from "@/lib/orders/for
 import type { OrderRecord } from "@/lib/orders/types";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/utils";
+import {
+  playKitchenOrderAlert,
+  unlockKitchenAudio,
+} from "@/lib/orders/kitchen-alert";
 
 type FilterKey =
   | "all"
@@ -29,30 +33,6 @@ const FILTERS: { key: FilterKey; label: string }[] = [
   { key: "completed", label: "Tamamlandı" },
   { key: "cancelled", label: "İptal" },
 ];
-
-function playNotificationSound() {
-  try {
-    const AudioCtx =
-      window.AudioContext ||
-      (window as unknown as { webkitAudioContext: typeof AudioContext })
-        .webkitAudioContext;
-    if (!AudioCtx) return;
-    const ctx = new AudioCtx();
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.type = "sine";
-    osc.frequency.value = 880;
-    gain.gain.value = 0.08;
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.start();
-    gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.35);
-    osc.stop(ctx.currentTime + 0.4);
-    window.setTimeout(() => void ctx.close(), 500);
-  } catch {
-    // Ses engellendiyse sessiz devam
-  }
-}
 
 function normalizeOrder(row: Record<string, unknown>): OrderRecord {
   return {
@@ -116,7 +96,7 @@ export function KitchenDashboard() {
               knownIds.current.add(order.id);
               setBanner(`Yeni sipariş: ${order.order_number}`);
               setHighlightIds((h) => new Set(h).add(order.id));
-              playNotificationSound();
+              playKitchenOrderAlert();
               window.setTimeout(() => {
                 setHighlightIds((h) => {
                   const next = new Set(h);
@@ -146,6 +126,19 @@ export function KitchenDashboard() {
   useEffect(() => {
     void loadOrders();
   }, [loadOrders]);
+
+  /** Tarayıcı ses kilidini aç — panelde herhangi bir tıklama yeterli */
+  useEffect(() => {
+    const unlock = () => {
+      void unlockKitchenAudio();
+    };
+    document.addEventListener("pointerdown", unlock, { once: true });
+    document.addEventListener("keydown", unlock, { once: true });
+    return () => {
+      document.removeEventListener("pointerdown", unlock);
+      document.removeEventListener("keydown", unlock);
+    };
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -194,7 +187,7 @@ export function KitchenDashboard() {
                   knownIds.current.add(order.id);
                   setBanner(`Yeni sipariş: ${order.order_number}`);
                   setHighlightIds((prev) => new Set(prev).add(order.id));
-                  playNotificationSound();
+                  playKitchenOrderAlert();
                   window.setTimeout(() => {
                     setHighlightIds((prev) => {
                       const next = new Set(prev);
@@ -351,9 +344,19 @@ export function KitchenDashboard() {
                 ? "Canlı"
                 : connection === "connecting"
                   ? "Bağlanıyor…"
-                  : "Kesildi — sayfayı yenileyin"}
+                  : "Kesildi — siparişler yenilenmeye devam eder"}
             </span>
           </p>
+          <Button
+            type="button"
+            variant="outline"
+            className="mt-3 !min-h-10 !px-4 text-sm"
+            onClick={() => {
+              void unlockKitchenAudio().then(() => playKitchenOrderAlert());
+            }}
+          >
+            Ses test et
+          </Button>
         </div>
         <div className="flex w-full flex-col gap-3 sm:max-w-md">
           <label htmlFor="kitchen-search" className="sr-only">
