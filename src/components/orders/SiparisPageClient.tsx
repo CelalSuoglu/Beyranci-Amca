@@ -122,6 +122,12 @@ export function SiparisPageClient() {
       ?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
+  /** Sekmelerde uzun başlıkları kısalt (bölüm başlığı tam kalır) */
+  function categoryTabLabel(title: string) {
+    const short = title.split("/")[0]?.trim();
+    return short || title;
+  }
+
   function getQty(productId: string) {
     return qtys[productId] ?? 1;
   }
@@ -269,9 +275,6 @@ export function SiparisPageClient() {
           <p className="mt-3 text-sm text-[var(--foreground-muted)]">
             Toplam: {formatTry(success.total)}
           </p>
-          <p className="mt-5 text-base font-medium text-[#fde68a]">
-            30 dakika teslimat süresi vardır.
-          </p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
             <Button href="/" className="justify-center">
               Ana sayfa
@@ -349,31 +352,44 @@ export function SiparisPageClient() {
 
           <nav
             aria-label="Ürün kategorileri"
-            className="sticky top-[4.25rem] z-30 -mx-5 border-b border-white/[0.06] bg-[var(--background)]/95 px-5 backdrop-blur-md sm:-mx-6 sm:px-6 lg:mx-0 lg:rounded-xl lg:border lg:border-white/[0.08] lg:px-3 lg:py-1"
+            className="sticky top-[4.25rem] z-30 bg-[var(--background)]/95 backdrop-blur-md"
           >
             <div
               className={cn(
-                "flex gap-2 overflow-x-auto overscroll-x-contain py-3",
-                "[scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden",
+                "-mx-5 sm:-mx-6 lg:mx-0",
+                "border-b border-white/[0.06] lg:rounded-xl lg:border lg:border-white/[0.08]",
               )}
-              role="tablist"
             >
-              {categories.map((category) => (
-                <button
-                  key={category.id}
-                  type="button"
-                  role="tab"
-                  className={cn(
-                    "shrink-0 rounded-full border border-white/12 px-3.5 py-2 text-sm font-medium",
-                    "min-h-10 text-[var(--foreground-muted)] transition-colors",
-                    "hover:border-white/25 hover:text-[var(--foreground)]",
-                    "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]",
-                  )}
-                  onClick={() => scrollToSection(`siparis-cat-${category.id}`)}
-                >
-                  {category.title}
-                </button>
-              ))}
+              <div
+                className={cn(
+                  "flex snap-x snap-mandatory gap-1.5 overflow-x-auto overscroll-x-contain",
+                  "px-5 py-2.5 sm:gap-2 sm:px-6 sm:py-3 lg:px-3",
+                  "[scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden",
+                )}
+                role="tablist"
+              >
+                {categories.map((category) => (
+                  <button
+                    key={category.id}
+                    type="button"
+                    role="tab"
+                    title={category.title}
+                    className={cn(
+                      "snap-start shrink-0 whitespace-nowrap rounded-full border border-white/10",
+                      "px-3 py-1.5 text-[13px] font-medium leading-none sm:px-3.5 sm:py-2 sm:text-sm",
+                      "min-h-9 text-[var(--foreground-muted)] transition-colors",
+                      "hover:border-white/25 hover:text-[var(--foreground)]",
+                      "active:border-[#d4af37]/45 active:bg-[#d4af37]/12 active:text-[#fde68a]",
+                      "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]",
+                    )}
+                    onClick={() =>
+                      scrollToSection(`siparis-cat-${category.id}`)
+                    }
+                  >
+                    {categoryTabLabel(category.title)}
+                  </button>
+                ))}
+              </div>
             </div>
           </nav>
 
@@ -732,27 +748,38 @@ export function SiparisPageClient() {
           <button
             type="button"
             className={cn(
-              "pointer-events-auto mx-auto flex w-full max-w-lg items-center justify-between gap-3",
+              "pointer-events-auto mx-auto flex w-full max-w-lg items-center justify-center gap-2.5",
               "min-h-14 rounded-2xl border border-[#d4af37]/40 bg-[#1a120e]/95 px-4 py-3 shadow-[0_12px_40px_-8px_rgba(0,0,0,0.65)] backdrop-blur-md",
-              "text-left transition hover:border-[#d4af37]/55 hover:bg-[#221810]",
+              "transition hover:border-[#d4af37]/55 hover:bg-[#221810]",
               "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]",
             )}
             onClick={() => scrollToSection("siparis-musteri")}
-            aria-label={`Sepette ${cartItemCount} ürün. Müşteri bilgilerine git.`}
+            aria-label={`Sepeti tamamla. Sepette ${cartItemCount} ürün.`}
           >
-            <span className="flex min-w-0 items-center gap-3">
+            <span className="relative shrink-0 text-[#fde68a]" aria-hidden>
+              <svg
+                viewBox="0 0 24 24"
+                className="h-6 w-6"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.75"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M6 6h15l-1.5 9h-12z" />
+                <path d="M6 6 5 3H2" />
+                <circle cx="9" cy="20" r="1" fill="currentColor" stroke="none" />
+                <circle cx="18" cy="20" r="1" fill="currentColor" stroke="none" />
+              </svg>
               <span
-                className="flex h-9 min-w-9 shrink-0 items-center justify-center rounded-full bg-[#d4af37]/2 px-2 text-sm font-semibold tabular-nums text-[#fde68a]"
+                className="absolute -right-2 -top-2 flex h-5 min-w-5 items-center justify-center rounded-full bg-[#d4af37] px-1 text-[11px] font-bold tabular-nums leading-none text-[#1a120e]"
                 aria-live="polite"
               >
                 {cartItemCount}
               </span>
-              <span className="truncate text-sm font-medium text-[var(--foreground)] sm:text-base">
-                Sepet · Bilgileri tamamla
-              </span>
             </span>
-            <span className="shrink-0 text-sm font-semibold tabular-nums text-[#e8c76a]">
-              {formatTry(subtotal)}
+            <span className="text-base font-semibold tracking-tight text-[var(--foreground)]">
+              Sepeti tamamla
             </span>
           </button>
         </div>
