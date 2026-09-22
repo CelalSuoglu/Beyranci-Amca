@@ -111,6 +111,17 @@ export function SiparisPageClient() {
   const meetsMinimum = subtotal >= MIN_ORDER_TOTAL_TL;
   const remaining = Math.max(0, MIN_ORDER_TOTAL_TL - subtotal);
 
+  const cartItemCount = useMemo(
+    () => cartLines.reduce((sum, line) => sum + line.quantity, 0),
+    [cartLines],
+  );
+
+  function scrollToSection(id: string) {
+    document
+      .getElementById(id)
+      ?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
   function getQty(productId: string) {
     return qtys[productId] ?? 1;
   }
@@ -291,7 +302,12 @@ export function SiparisPageClient() {
   }
 
   return (
-    <Container className="pb-28 pt-10 sm:pb-16 sm:pt-12">
+    <Container
+      className={cn(
+        "pt-10 sm:pt-12",
+        cartItemCount > 0 ? "pb-36 sm:pb-28" : "pb-28 sm:pb-16",
+      )}
+    >
       <header className="max-w-2xl">
         <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#d4af37]">
           Paket sipariş
@@ -330,8 +346,43 @@ export function SiparisPageClient() {
           <h2 id="menu-heading" className="sr-only">
             Menü
           </h2>
+
+          <nav
+            aria-label="Ürün kategorileri"
+            className="sticky top-[4.25rem] z-30 -mx-5 border-b border-white/[0.06] bg-[var(--background)]/95 px-5 backdrop-blur-md sm:-mx-6 sm:px-6 lg:mx-0 lg:rounded-xl lg:border lg:border-white/[0.08] lg:px-3 lg:py-1"
+          >
+            <div
+              className={cn(
+                "flex gap-2 overflow-x-auto overscroll-x-contain py-3",
+                "[scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden",
+              )}
+              role="tablist"
+            >
+              {categories.map((category) => (
+                <button
+                  key={category.id}
+                  type="button"
+                  role="tab"
+                  className={cn(
+                    "shrink-0 rounded-full border border-white/12 px-3.5 py-2 text-sm font-medium",
+                    "min-h-10 text-[var(--foreground-muted)] transition-colors",
+                    "hover:border-white/25 hover:text-[var(--foreground)]",
+                    "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]",
+                  )}
+                  onClick={() => scrollToSection(`siparis-cat-${category.id}`)}
+                >
+                  {category.title}
+                </button>
+              ))}
+            </div>
+          </nav>
+
           {categories.map((category) => (
-            <div key={category.id}>
+            <div
+              key={category.id}
+              id={`siparis-cat-${category.id}`}
+              className="scroll-mt-[8.5rem] sm:scroll-mt-[8.75rem]"
+            >
               <h3 className="font-[family-name:var(--font-display)] text-xl font-semibold text-[#faf6ef]">
                 {category.title}
               </h3>
@@ -479,7 +530,10 @@ export function SiparisPageClient() {
           ))}
         </section>
 
-        <aside className="lg:sticky lg:top-24">
+        <aside
+          id="siparis-musteri"
+          className="scroll-mt-[5.5rem] lg:sticky lg:top-24"
+        >
           <div className="rounded-2xl border border-white/[0.08] bg-gradient-to-br from-[var(--surface)] to-[#14100e] p-5 shadow-lg sm:p-6">
             <h2 className="font-[family-name:var(--font-display)] text-xl font-semibold">
               Sepetiniz
@@ -672,6 +726,37 @@ export function SiparisPageClient() {
           </div>
         </aside>
       </div>
+
+      {cartItemCount > 0 ? (
+        <div className="pointer-events-none fixed inset-x-0 bottom-0 z-40 px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2 sm:px-6">
+          <button
+            type="button"
+            className={cn(
+              "pointer-events-auto mx-auto flex w-full max-w-lg items-center justify-between gap-3",
+              "min-h-14 rounded-2xl border border-[#d4af37]/40 bg-[#1a120e]/95 px-4 py-3 shadow-[0_12px_40px_-8px_rgba(0,0,0,0.65)] backdrop-blur-md",
+              "text-left transition hover:border-[#d4af37]/55 hover:bg-[#221810]",
+              "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]",
+            )}
+            onClick={() => scrollToSection("siparis-musteri")}
+            aria-label={`Sepette ${cartItemCount} ürün. Müşteri bilgilerine git.`}
+          >
+            <span className="flex min-w-0 items-center gap-3">
+              <span
+                className="flex h-9 min-w-9 shrink-0 items-center justify-center rounded-full bg-[#d4af37]/2 px-2 text-sm font-semibold tabular-nums text-[#fde68a]"
+                aria-live="polite"
+              >
+                {cartItemCount}
+              </span>
+              <span className="truncate text-sm font-medium text-[var(--foreground)] sm:text-base">
+                Sepet · Bilgileri tamamla
+              </span>
+            </span>
+            <span className="shrink-0 text-sm font-semibold tabular-nums text-[#e8c76a]">
+              {formatTry(subtotal)}
+            </span>
+          </button>
+        </div>
+      ) : null}
     </Container>
   );
 }
