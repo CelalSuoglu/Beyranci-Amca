@@ -307,18 +307,20 @@ export function SiparisPageClient() {
   return (
     <Container
       className={cn(
-        "pt-10 sm:pt-12",
-        cartItemCount > 0 ? "pb-36 sm:pb-28" : "pb-28 sm:pb-16",
+        "min-w-0 pt-8 sm:pt-12",
+        cartItemCount > 0
+          ? "pb-[calc(6rem+env(safe-area-inset-bottom,0px))] sm:pb-28"
+          : "pb-24 sm:pb-16",
       )}
     >
-      <header className="max-w-2xl">
+      <header className="max-w-2xl min-w-0">
         <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#d4af37]">
           Paket sipariş
         </p>
-        <h1 className="mt-3 font-[family-name:var(--font-display)] text-3xl font-semibold tracking-tight text-[var(--foreground)] sm:text-4xl">
+        <h1 className="mt-3 font-[family-name:var(--font-display)] text-[1.75rem] font-semibold tracking-tight text-[var(--foreground)] sm:text-4xl">
           Online sipariş
         </h1>
-        <p className="mt-4 text-base leading-relaxed text-[var(--foreground-muted)]">
+        <p className="mt-4 text-sm leading-relaxed text-[var(--foreground-muted)] sm:text-base">
           Minimum sipariş tutarı{" "}
           <strong className="font-semibold text-[#e8c76a]">
             {formatTry(MIN_ORDER_TOTAL_TL)}
@@ -344,52 +346,53 @@ export function SiparisPageClient() {
         </div>
       </header>
 
-      <div className="mt-10 grid gap-10 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)] lg:items-start">
-        <section aria-labelledby="menu-heading" className="space-y-10">
+      <div className="mt-8 grid min-w-0 gap-8 sm:mt-10 sm:gap-10 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)] lg:items-start">
+        <section
+          aria-labelledby="menu-heading"
+          className="min-w-0 space-y-8 sm:space-y-10"
+        >
           <h2 id="menu-heading" className="sr-only">
             Menü
           </h2>
 
           <nav
             aria-label="Ürün kategorileri"
-            className="sticky top-[4.25rem] z-30 bg-[var(--background)]/95 backdrop-blur-md"
+            className={cn(
+              "sticky top-[4.25rem] z-30",
+              "-mx-5 sm:-mx-6 lg:mx-0",
+              "border-b border-white/[0.08] bg-[var(--background)]/97 backdrop-blur-md",
+              "lg:rounded-xl lg:border lg:border-white/[0.08]",
+            )}
           >
             <div
               className={cn(
-                "-mx-5 sm:-mx-6 lg:mx-0",
-                "border-b border-white/[0.06] lg:rounded-xl lg:border lg:border-white/[0.08]",
+                "flex touch-pan-x snap-x snap-mandatory gap-2 overflow-x-auto overscroll-x-contain",
+                "px-4 py-2.5 sm:gap-2 sm:px-5 sm:py-3 lg:px-3",
+                "[scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden",
               )}
+              role="tablist"
             >
-              <div
-                className={cn(
-                  "flex snap-x snap-mandatory gap-1.5 overflow-x-auto overscroll-x-contain",
-                  "px-5 py-2.5 sm:gap-2 sm:px-6 sm:py-3 lg:px-3",
-                  "[scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden",
-                )}
-                role="tablist"
-              >
-                {categories.map((category) => (
-                  <button
-                    key={category.id}
-                    type="button"
-                    role="tab"
-                    title={category.title}
-                    className={cn(
-                      "snap-start shrink-0 whitespace-nowrap rounded-full border border-white/10",
-                      "px-3 py-1.5 text-[13px] font-medium leading-none sm:px-3.5 sm:py-2 sm:text-sm",
-                      "min-h-9 text-[var(--foreground-muted)] transition-colors",
-                      "hover:border-white/25 hover:text-[var(--foreground)]",
-                      "active:border-[#d4af37]/45 active:bg-[#d4af37]/12 active:text-[#fde68a]",
-                      "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]",
-                    )}
-                    onClick={() =>
-                      scrollToSection(`siparis-cat-${category.id}`)
-                    }
-                  >
-                    {categoryTabLabel(category.title)}
-                  </button>
-                ))}
-              </div>
+              {categories.map((category) => (
+                <button
+                  key={category.id}
+                  type="button"
+                  role="tab"
+                  title={category.title}
+                  className={cn(
+                    "snap-start shrink-0 whitespace-nowrap rounded-full border border-white/12",
+                    "min-h-11 px-3.5 py-2 text-[13px] font-medium leading-none sm:min-h-10 sm:px-3.5 sm:text-sm",
+                    "text-[var(--foreground-muted)] transition-colors",
+                    "hover:border-white/25 hover:text-[var(--foreground)]",
+                    "active:border-[#d4af37]/45 active:bg-[#d4af37]/12 active:text-[#fde68a]",
+                    "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]",
+                  )}
+                  onClick={() =>
+                    scrollToSection(`siparis-cat-${category.id}`)
+                  }
+                >
+                  {categoryTabLabel(category.title)}
+                </button>
+              ))}
             </div>
           </nav>
 
@@ -397,12 +400,12 @@ export function SiparisPageClient() {
             <div
               key={category.id}
               id={`siparis-cat-${category.id}`}
-              className="scroll-mt-[8.5rem] sm:scroll-mt-[8.75rem]"
+              className="min-w-0 scroll-mt-[8.5rem] sm:scroll-mt-[8.75rem]"
             >
-              <h3 className="font-[family-name:var(--font-display)] text-xl font-semibold text-[#faf6ef]">
+              <h3 className="font-[family-name:var(--font-display)] text-lg font-semibold text-[#faf6ef] sm:text-xl">
                 {category.title}
               </h3>
-              <div className="mt-4 space-y-3">
+              <div className="mt-3 space-y-3 sm:mt-4">
                 {category.products.map((product) => {
                   const qty = getQty(product.id);
                   const spice = getSpice(product);
@@ -410,15 +413,15 @@ export function SiparisPageClient() {
                   return (
                     <article
                       key={product.id}
-                      className="rounded-xl border border-white/[0.08] bg-[var(--surface)]/80 p-4 sm:p-5"
+                      className="min-w-0 rounded-xl border border-white/[0.08] bg-[var(--surface)]/80 p-3.5 sm:p-5"
                     >
                       <div className="flex items-start justify-between gap-3">
-                        <div className="min-w-0">
-                          <h4 className="font-semibold text-[var(--foreground)]">
+                        <div className="min-w-0 flex-1">
+                          <h4 className="break-words font-semibold text-[var(--foreground)]">
                             {product.name}
                           </h4>
                           {product.description ? (
-                            <p className="mt-1.5 text-sm leading-relaxed text-[var(--foreground-muted)]">
+                            <p className="mt-1.5 break-words text-sm leading-relaxed text-[var(--foreground-muted)]">
                               {product.description}
                             </p>
                           ) : null}
@@ -438,7 +441,7 @@ export function SiparisPageClient() {
                               <label
                                 key={level}
                                 className={cn(
-                                  "inline-flex min-h-10 cursor-pointer items-center rounded-full border px-3 text-sm font-medium transition-colors",
+                                  "inline-flex min-h-11 cursor-pointer items-center rounded-full border px-3 text-sm font-medium transition-colors sm:min-h-10",
                                   spice === level
                                     ? "border-[#d4af37]/55 bg-[#d4af37]/15 text-[#fde68a]"
                                     : "border-white/12 text-[var(--foreground-muted)] hover:border-white/25",
@@ -474,7 +477,7 @@ export function SiparisPageClient() {
                               <label
                                 key={level}
                                 className={cn(
-                                  "inline-flex min-h-10 cursor-pointer items-center rounded-full border px-3 text-sm font-medium transition-colors",
+                                  "inline-flex min-h-11 cursor-pointer items-center rounded-full border px-3 text-sm font-medium transition-colors sm:min-h-10",
                                   garlic === level
                                     ? "border-[#d4af37]/55 bg-[#d4af37]/15 text-[#fde68a]"
                                     : "border-white/12 text-[var(--foreground-muted)] hover:border-white/25",
@@ -548,9 +551,9 @@ export function SiparisPageClient() {
 
         <aside
           id="siparis-musteri"
-          className="scroll-mt-[5.5rem] lg:sticky lg:top-24"
+          className="min-w-0 scroll-mt-[5.25rem] pb-2 lg:sticky lg:top-[5.5rem] lg:pb-0"
         >
-          <div className="rounded-2xl border border-white/[0.08] bg-gradient-to-br from-[var(--surface)] to-[#14100e] p-5 shadow-lg sm:p-6">
+          <div className="min-w-0 rounded-2xl border border-white/[0.08] bg-gradient-to-br from-[var(--surface)] to-[#14100e] p-4 shadow-lg sm:p-6">
             <h2 className="font-[family-name:var(--font-display)] text-xl font-semibold">
               Sepetiniz
             </h2>
@@ -567,7 +570,7 @@ export function SiparisPageClient() {
                     className="flex items-start justify-between gap-3 border-b border-white/[0.06] pb-3 last:border-0"
                   >
                     <div className="min-w-0">
-                      <p className="font-medium text-[var(--foreground)]">
+                      <p className="break-words font-medium text-[var(--foreground)]">
                         {line.displayName}
                       </p>
                       <p className="mt-1 text-sm text-[var(--foreground-muted)]">
@@ -744,12 +747,19 @@ export function SiparisPageClient() {
       </div>
 
       {cartItemCount > 0 ? (
-        <div className="pointer-events-none fixed inset-x-0 bottom-0 z-40 px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2 sm:px-6">
+        <div
+          className={cn(
+            "pointer-events-none fixed inset-x-0 bottom-0 z-40",
+            "px-3 pt-2 sm:px-6",
+            "pb-[max(0.75rem,env(safe-area-inset-bottom,0px))]",
+          )}
+        >
           <button
             type="button"
             className={cn(
               "pointer-events-auto mx-auto flex w-full max-w-lg items-center justify-center gap-2.5",
-              "min-h-14 rounded-2xl border border-[#d4af37]/40 bg-[#1a120e]/95 px-4 py-3 shadow-[0_12px_40px_-8px_rgba(0,0,0,0.65)] backdrop-blur-md",
+              "min-h-14 rounded-2xl border border-[#d4af37]/40 bg-[#1a120e]/97 px-4 py-3",
+              "shadow-[0_12px_40px_-8px_rgba(0,0,0,0.65)] backdrop-blur-md",
               "transition hover:border-[#d4af37]/55 hover:bg-[#221810]",
               "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]",
             )}
@@ -789,7 +799,7 @@ export function SiparisPageClient() {
 }
 
 const fieldClass = cn(
-  "mt-1.5 w-full rounded-xl border border-white/12 bg-black/25 px-3 py-3 text-[var(--foreground)]",
+  "mt-1.5 w-full min-w-0 max-w-full rounded-xl border border-white/12 bg-black/25 px-3 py-3 text-[var(--foreground)]",
   "placeholder:text-[var(--foreground-muted)]/70",
   "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]",
 );
