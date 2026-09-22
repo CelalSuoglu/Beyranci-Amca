@@ -9,6 +9,9 @@ export const metadata: Metadata = {
   title: "Paket Sipariş",
   description:
     "Beyrancı Amca’dan online paket sipariş verin. Minimum 1.250 TL. Kapıda nakit veya kart.",
+  alternates: {
+    canonical: "/siparis",
+  },
 };
 
 export default function SiparisPage() {

@@ -30,6 +30,9 @@ export type SiteConfig = {
 
 export { sitePlaceholders } from "./site-placeholders";
 
+/** Production site origin — sitemap, canonical, Open Graph */
+export const siteUrl = "https://beyranciamca.com";
+
 export const site: SiteConfig = {
   name: "Beyrancı Amca",
   tagline: "Geleneksel Beyran ve Anadolu lezzetleri",
