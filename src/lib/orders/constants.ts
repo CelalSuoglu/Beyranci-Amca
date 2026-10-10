@@ -1,6 +1,9 @@
 /** Minimum paket sipariş tutarı (TL) */
 export const MIN_ORDER_TOTAL_TL = 1250;
 
+/** Restorandan en fazla teslimat mesafesi (km) */
+export const MAX_DELIVERY_KM = 15;
+
 export const ORDER_STATUSES = [
   "new",
   "accepted",

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { checkDeliveryRadius } from "@/lib/orders/delivery-radius";
 import {
   createOrderInputSchema,
   validateAndPriceOrder,
@@ -29,6 +30,11 @@ export async function POST(request: Request) {
   const priced = validateAndPriceOrder(parsed.data);
   if (!priced.ok) {
     return NextResponse.json({ error: priced.message }, { status: 400 });
+  }
+
+  const delivery = await checkDeliveryRadius(priced.order.address);
+  if (!delivery.ok) {
+    return NextResponse.json({ error: delivery.message }, { status: 400 });
   }
 
   try {

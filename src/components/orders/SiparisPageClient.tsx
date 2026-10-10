@@ -4,7 +4,11 @@ import { useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
 import { Container } from "@/components/ui/Container";
-import { MIN_ORDER_TOTAL_TL, PAYMENT_METHOD_LABELS } from "@/lib/orders/constants";
+import {
+  MAX_DELIVERY_KM,
+  MIN_ORDER_TOTAL_TL,
+  PAYMENT_METHOD_LABELS,
+} from "@/lib/orders/constants";
 import { formatTry } from "@/lib/orders/format";
 import {
   getOrderableCategories,
@@ -325,8 +329,10 @@ export function SiparisPageClient() {
           <strong className="font-semibold text-[#e8c76a]">
             {formatTry(MIN_ORDER_TOTAL_TL)}
           </strong>
-          . Lahmacun için acı, beyran için acı ve sarımsak, kebap için acı
-          seçeneği seçin. Ödeme kapıda nakit veya kart ile alınır.
+          . Teslimat yalnızca restorana en fazla {MAX_DELIVERY_KM} km
+          mesafeye yapılır. Lahmacun için acı, beyran için acı ve sarımsak,
+          kebap için acı seçeneği seçin. Ödeme kapıda nakit veya kart ile
+          alınır.
         </p>
         <div className="mt-4 flex flex-wrap gap-3 text-sm">
           <Link
@@ -681,10 +687,14 @@ export function SiparisPageClient() {
                   required
                   rows={3}
                   autoComplete="street-address"
+                  placeholder="Mahalle, sokak, bina no, ilçe"
                   value={address}
                   onChange={(e) => setAddress(e.target.value)}
                   className={cn(fieldClass, "resize-y")}
                 />
+                <p className="mt-2 text-xs leading-relaxed text-[var(--foreground-muted)]">
+                  {MAX_DELIVERY_KM} km üzerindeki adreslere sipariş götürülmez.
+                </p>
               </div>
               <div>
                 <label htmlFor="note" className="block text-sm font-medium">

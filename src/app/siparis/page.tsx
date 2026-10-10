@@ -8,7 +8,7 @@ import { site } from "@/lib/site";
 export const metadata: Metadata = {
   title: "Paket Sipariş",
   description:
-    "Beyrancı Amca’dan online paket sipariş verin. Minimum 1.250 TL. Kapıda nakit veya kart.",
+    "Beyrancı Amca’dan online paket sipariş verin. Minimum 1.250 TL. Teslimat en fazla 15 km. Kapıda nakit veya kart.",
   alternates: {
     canonical: "/siparis",
   },
