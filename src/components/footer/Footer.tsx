@@ -117,8 +117,10 @@ export function Footer() {
 
         <div className="mt-14 flex flex-col items-start justify-between gap-4 border-t border-white/[0.08] pt-10 text-xs leading-relaxed text-[var(--foreground-muted)] sm:flex-row sm:items-center">
           <p>© {new Date().getFullYear()} {site.name}. Tüm hakları saklıdır.</p>
-          <p className="text-[var(--foreground-muted)]/80">
-            Geleneksel lezzet, sıcak karşılama.
+          <p className="flex flex-wrap gap-x-4 gap-y-2">
+            <a href="/gizlilik" className="hover:text-[var(--accent)]">Gizlilik ve KVKK</a>
+            <a href="/hesabim" className="hover:text-[var(--accent)]">Hesabım</a>
+            <span className="text-[var(--foreground-muted)]/80">Geleneksel lezzet, sıcak karşılama.</span>
           </p>
         </div>
       </Container>

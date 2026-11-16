@@ -15,6 +15,8 @@ export type OrderableProduct = {
   requiresGarlic: boolean;
   /** Geriye dönük kısayol: spiceLevels dolu mu */
   requiresSpice: boolean;
+  /** Kalori (kcal); menüde yazmıyorsa yok */
+  calories?: number;
 };
 
 /** "450,00 TL" / "450 TL" → 450 */
@@ -96,6 +98,7 @@ function buildProducts(): OrderableProduct[] {
           name: item.name,
           description:
             "description" in item ? item.description : undefined,
+          calories: item.calories,
           unitPrice,
           spiceLevels: modifiers.spiceLevels,
           requiresGarlic: modifiers.requiresGarlic,
@@ -115,6 +118,7 @@ function buildProducts(): OrderableProduct[] {
           categoryId: category.id,
           categoryTitle: category.subSectionTitle ?? category.title,
           name: item.name,
+          calories: item.calories,
           unitPrice,
           spiceLevels: modifiers.spiceLevels,
           requiresGarlic: modifiers.requiresGarlic,

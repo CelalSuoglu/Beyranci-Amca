@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
 import { Container } from "@/components/ui/Container";
@@ -10,10 +11,7 @@ import {
   PAYMENT_METHOD_LABELS,
 } from "@/lib/orders/constants";
 import { formatTry } from "@/lib/orders/format";
-import {
-  getOrderableCategories,
-  type OrderableProduct,
-} from "@/lib/orders/orderable-menu";
+import type { OrderableProduct } from "@/lib/orders/orderable-menu";
 import {
   GARLIC_LEVELS,
   GARLIC_LEVEL_LABELS,
@@ -37,6 +35,17 @@ type CartLine = {
 type SuccessState = {
   orderNumber: string;
   total: number;
+  orderId: string | null;
+  trackingToken: string | null;
+  signedIn: boolean;
+};
+
+type SavedAddress = { id: string; label: string; address: string; is_default: boolean };
+
+export type OrderCategory = {
+  id: string;
+  title: string;
+  products: OrderableProduct[];
 };
 
 function cartKey(
@@ -47,8 +56,7 @@ function cartKey(
   return [productId, spice ?? "", garlic ?? ""].join("__");
 }
 
-export function SiparisPageClient() {
-  const categories = useMemo(() => getOrderableCategories(), []);
+export function SiparisPageClient({ categories }: { categories: OrderCategory[] }) {
   const productMap = useMemo(() => {
     const map = new Map<string, OrderableProduct>();
     for (const category of categories) {
@@ -73,6 +81,44 @@ export function SiparisPageClient() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<SuccessState | null>(null);
   const [pending, startTransition] = useTransition();
+  const [signedIn, setSignedIn] = useState(false);
+  const [savedAddresses, setSavedAddresses] = useState<SavedAddress[]>([]);
+  const idempotencyKey = useRef<string | null>(null);
+
+  /** Giriş yapmış müşteri için ad, telefon ve kayıtlı adresleri doldur */
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const supabase = createClient();
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+        if (!user || cancelled) return;
+        setSignedIn(true);
+        const [{ data: profile }, { data: addresses }] = await Promise.all([
+          supabase.from("profiles").select("full_name, phone").eq("id", user.id).maybeSingle(),
+          supabase
+            .from("addresses")
+            .select("id, label, address, is_default")
+            .order("is_default", { ascending: false })
+            .order("created_at", { ascending: false }),
+        ]);
+        if (cancelled) return;
+        if (profile?.full_name) setCustomerName((v) => v || profile.full_name);
+        if (profile?.phone) setPhone((v) => v || profile.phone);
+        const list = (addresses ?? []) as SavedAddress[];
+        setSavedAddresses(list);
+        const preferred = list.find((a) => a.is_default) ?? list[0];
+        if (preferred) setAddress((v) => v || preferred.address);
+      } catch {
+        // misafir olarak devam
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const cartLines = useMemo(() => {
     return cart
@@ -209,11 +255,20 @@ export function SiparisPageClient() {
       return;
     }
 
+    // Aynı sepet tekrar gönderilirse (çift tıklama, bağlantı kopması) ikinci sipariş oluşmaz
+    if (!idempotencyKey.current) {
+      idempotencyKey.current =
+        typeof crypto !== "undefined" && "randomUUID" in crypto
+          ? crypto.randomUUID()
+          : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    }
+    const key = idempotencyKey.current;
+
     startTransition(async () => {
       try {
         const res = await fetch("/api/orders", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: { "Content-Type": "application/json", "Idempotency-Key": key },
           body: JSON.stringify({
             customerName,
             phone,
@@ -233,6 +288,8 @@ export function SiparisPageClient() {
           error?: string;
           orderNumber?: string;
           total?: number;
+          orderId?: string;
+          trackingToken?: string;
         } | null;
 
         if (!res.ok || !data?.orderNumber) {
@@ -246,7 +303,11 @@ export function SiparisPageClient() {
         setSuccess({
           orderNumber: data.orderNumber,
           total: data.total ?? subtotal,
+          orderId: data.orderId ?? null,
+          trackingToken: data.trackingToken ?? null,
+          signedIn,
         });
+        idempotencyKey.current = null;
         setCart([]);
       } catch {
         setError(
@@ -280,9 +341,19 @@ export function SiparisPageClient() {
             Toplam: {formatTry(success.total)}
           </p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
-            <Button href="/" className="justify-center">
-              Ana sayfa
-            </Button>
+            {success.signedIn && success.orderId ? (
+              <Button href={`/hesabim/siparisler/${success.orderId}`} className="justify-center">
+                Siparişi takip et
+              </Button>
+            ) : success.trackingToken ? (
+              <Button href={`/takip/${success.trackingToken}`} className="justify-center">
+                Siparişi takip et
+              </Button>
+            ) : (
+              <Button href="/" className="justify-center">
+                Ana sayfa
+              </Button>
+            )}
             <Button
               type="button"
               variant="outline"
@@ -292,6 +363,15 @@ export function SiparisPageClient() {
               Yeni sipariş
             </Button>
           </div>
+          {!success.signedIn && success.trackingToken ? (
+            <p className="mt-6 text-xs leading-relaxed text-[var(--foreground-muted)]">
+              Takip bağlantısını kaydedin. Siparişlerinizi her zaman görmek için{" "}
+              <Link href="/kayit" className="text-[#fdba74] underline-offset-2 hover:underline">
+                üye olabilirsiniz
+              </Link>
+              .
+            </p>
+          ) : null}
           {site.phoneTel ? (
             <p className="mt-6 text-sm text-[var(--foreground-muted)]">
               Sorunuz mu var?{" "}
@@ -425,6 +505,11 @@ export function SiparisPageClient() {
                         <div className="min-w-0 flex-1">
                           <h4 className="break-words font-semibold text-[var(--foreground)]">
                             {product.name}
+                            {product.calories ? (
+                              <span className="ml-2 whitespace-nowrap text-xs font-normal text-[var(--foreground-muted)]">
+                                {product.calories} kcal
+                              </span>
+                            ) : null}
                           </h4>
                           {product.description ? (
                             <p className="mt-1.5 break-words text-sm leading-relaxed text-[var(--foreground-muted)]">
@@ -681,6 +766,25 @@ export function SiparisPageClient() {
                 <label htmlFor="address" className="block text-sm font-medium">
                   Teslimat adresi
                 </label>
+                {savedAddresses.length > 0 ? (
+                  <div className="mt-2 flex flex-wrap gap-2" aria-label="Kayıtlı adresler">
+                    {savedAddresses.map((a) => (
+                      <button
+                        key={a.id}
+                        type="button"
+                        onClick={() => setAddress(a.address)}
+                        className={cn(
+                          "min-h-10 rounded-full border px-3 text-sm font-medium transition-colors",
+                          address === a.address
+                            ? "border-[#d4af37]/55 bg-[#d4af37]/15 text-[#fde68a]"
+                            : "border-white/12 text-[var(--foreground-muted)] hover:border-white/25",
+                        )}
+                      >
+                        {a.label}
+                      </button>
+                    ))}
+                  </div>
+                ) : null}
                 <textarea
                   id="address"
                   name="address"
@@ -740,6 +844,16 @@ export function SiparisPageClient() {
                   role="alert"
                 >
                   {error}
+                </p>
+              ) : null}
+
+              {!signedIn ? (
+                <p className="text-xs leading-relaxed text-[var(--foreground-muted)]">
+                  Üye olmadan sipariş verebilirsiniz.{" "}
+                  <Link href="/giris?next=/siparis" className="text-[#fdba74] underline-offset-2 hover:underline">
+                    Giriş yapın
+                  </Link>{" "}
+                  ki bilgileriniz otomatik dolsun ve siparişlerinizi takip edebilin.
                 </p>
               ) : null}
 

@@ -85,6 +85,14 @@ export function Navbar() {
           >
             Paket sipariş
           </Button>
+          <Button
+            href="/hesabim"
+            variant="outline"
+            className="w-full"
+            onClick={() => setOpen(false)}
+          >
+            Hesabım · Siparişlerim
+          </Button>
           {site.whatsapp ? (
             <Button
               href={site.whatsapp}
@@ -250,6 +258,9 @@ export function Navbar() {
           </nav>
 
           <div className="hidden items-center gap-2 lg:flex">
+            <Button href="/hesabim" variant="ghost" className="!px-4 !py-2.5 text-xs">
+              Hesabım
+            </Button>
             <Button
               href="/siparis"
               variant="primary"

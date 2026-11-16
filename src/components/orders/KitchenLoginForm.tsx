@@ -15,6 +15,7 @@ export function KitchenLoginForm() {
   const [pending, startTransition] = useTransition();
 
   const configError = searchParams.get("error") === "config";
+  const roleError = searchParams.get("error") === "yetki";
 
   function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -42,6 +43,19 @@ export function KitchenLoginForm() {
           } else {
             setError(`Giriş başarısız: ${raw}`);
           }
+          return;
+        }
+
+        // Sadece personel ve yönetici mutfak paneline girebilir
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+        const { data: profile } = user
+          ? await supabase.from("profiles").select("role").eq("id", user.id).maybeSingle()
+          : { data: null };
+        if (profile?.role !== "staff" && profile?.role !== "admin") {
+          await supabase.auth.signOut();
+          setError("Bu hesabın mutfak paneline erişim yetkisi yok.");
           return;
         }
 
@@ -73,6 +87,12 @@ export function KitchenLoginForm() {
         <p className="mt-4 rounded-lg border border-amber-500/30 bg-amber-950/30 px-3 py-2 text-sm text-amber-100" role="alert">
           Supabase ortam değişkenleri henüz yapılandırılmamış. Vercel / `.env.local`
           ayarlarını tamamlayın.
+        </p>
+      ) : null}
+
+      {roleError ? (
+        <p className="mt-4 rounded-lg border border-amber-500/30 bg-amber-950/30 px-3 py-2 text-sm text-amber-100" role="alert">
+          Bu hesabın mutfak paneline erişim yetkisi yok. Personel hesabıyla giriş yapın.
         </p>
       ) : null}
 

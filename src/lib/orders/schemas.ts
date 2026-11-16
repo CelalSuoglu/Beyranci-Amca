@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { MIN_ORDER_TOTAL_TL, ORDER_STATUSES, PAYMENT_METHODS } from "./constants";
-import { getOrderableProduct } from "./orderable-menu";
+import { getOrderableProduct, type OrderableProduct } from "./orderable-menu";
 import { normalizeTurkishPhone } from "./format";
 import {
   GARLIC_LEVELS,
@@ -43,6 +43,8 @@ export const createOrderInputSchema = z.object({
     .optional()
     .or(z.literal("")),
   paymentMethod: z.enum(PAYMENT_METHODS),
+  /** Aynı isteğin tekrar gönderilmesinde ikinci sipariş oluşmasın */
+  idempotencyKey: z.string().trim().min(8).max(100).optional(),
   items: z
     .array(cartItemInputSchema)
     .min(1, "Sepetiniz boş. En az bir ürün ekleyin."),
@@ -80,6 +82,7 @@ export type ValidatedOrder = {
  */
 export function validateAndPriceOrder(
   input: CreateOrderInput,
+  findProduct: (id: string) => OrderableProduct | undefined = getOrderableProduct,
 ):
   | { ok: true; order: ValidatedOrder }
   | { ok: false; message: string } {
@@ -95,7 +98,7 @@ export function validateAndPriceOrder(
   const seen = new Set<string>();
 
   for (const item of input.items) {
-    const product = getOrderableProduct(item.productId);
+    const product = findProduct(item.productId);
     if (!product) {
       return {
         ok: false,

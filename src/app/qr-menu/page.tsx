@@ -1,5 +1,5 @@
 import Image from "next/image";
-import { menuCategories } from "@/lib/menu-data";
+import { getCatalog } from "@/lib/menu/catalog";
 import { site } from "@/lib/site";
 import { brand } from "@/lib/brand";
 import { cn } from "@/lib/utils";
@@ -34,18 +34,29 @@ function QrCategoryTitle({
   );
 }
 
+function Kcal({ value }: { value?: number }) {
+  if (!value) return null;
+  return (
+    <span className="ml-2 whitespace-nowrap text-xs font-normal text-[var(--foreground-muted)]">
+      {value} kcal
+    </span>
+  );
+}
+
 function QrMenuCard({
   name,
   price,
   options,
   description,
   descriptionList,
+  calories,
 }: {
   name: string;
   price?: string;
   options?: { name: string; price: string }[];
   description?: string;
   descriptionList?: string[];
+  calories?: number;
 }) {
   return (
     <article
@@ -56,6 +67,7 @@ function QrMenuCard({
       <header className="flex flex-row items-start justify-between gap-3 sm:gap-8">
         <h3 className="min-w-0 flex-1 text-left text-[1.0625rem] font-semibold leading-snug tracking-tight text-[#f5f0e8] sm:text-lg">
           {name}
+          <Kcal value={calories} />
         </h3>
         {price ? (
           <p className="shrink-0 whitespace-nowrap text-right text-[1.0625rem] font-semibold tabular-nums tracking-tight text-[#e8c76a] sm:min-w-[6rem] sm:text-lg">
@@ -99,11 +111,12 @@ function QrMenuCard({
   );
 }
 
-function QrMenuRow({ name, price }: { name: string; price: string }) {
+function QrMenuRow({ name, price, calories }: { name: string; price: string; calories?: number }) {
   return (
     <div className="flex min-h-[3.5rem] items-center justify-between gap-4 border-b border-white/[0.06] py-4 last:border-b-0 last:pb-0">
       <span className="min-w-0 flex-1 text-[1.0625rem] font-medium leading-snug tracking-tight text-[#ebe4dc]">
         {name}
+        <Kcal value={calories} />
       </span>
       <span className="shrink-0 min-w-[5.25rem] text-right text-[1.0625rem] font-semibold tabular-nums tracking-tight text-[#d4af37]">
         {price}
@@ -116,7 +129,10 @@ function getSafePrice(price: string | undefined): string {
   return price ?? "";
 }
 
-export default function QrMenuPage() {
+export const revalidate = 60;
+
+export default async function QrMenuPage() {
+  const { menu: menuCategories } = await getCatalog();
   return (
     <div className="min-h-[100dvh] bg-[var(--background)] text-[var(--foreground)] antialiased">
       <div
@@ -169,23 +185,27 @@ export default function QrMenuPage() {
                         options={item.options}
                         description={item.description}
                         descriptionList={item.descriptionList}
+                        calories={item.calories}
                       />
                     ))}
                   </div>
-                  {category.subSectionTitle && category.subSectionItems?.length ? (
+                  {category.subSectionItems?.length ? (
                     <div
                       className={cn(
                         "rounded-xl border border-white/[0.07] bg-gradient-to-b from-[#1c1917]/90 to-[#141110]/95 px-5 py-2 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.03)] sm:px-6 sm:py-3",
                       )}
                     >
-                      <h3 className="border-b border-white/[0.06] pb-3 pt-1 font-[family-name:var(--font-display)] text-[1rem] font-semibold tracking-tight text-[#f5f0e8] sm:text-[1.0625rem]">
-                        {category.subSectionTitle}
-                      </h3>
+                      {category.subSectionTitle ? (
+                        <h3 className="border-b border-white/[0.06] pb-3 pt-1 font-[family-name:var(--font-display)] text-[1rem] font-semibold tracking-tight text-[#f5f0e8] sm:text-[1.0625rem]">
+                          {category.subSectionTitle}
+                        </h3>
+                      ) : null}
                       {category.subSectionItems.map((item) => (
                         <QrMenuRow
                           key={item.name}
                           name={item.name}
                           price={getSafePrice(item.price)}
+                          calories={item.calories}
                         />
                       ))}
                     </div>
@@ -240,6 +260,7 @@ export default function QrMenuPage() {
                           key={item.name}
                           name={item.name}
                           price={getSafePrice(item.price)}
+                          calories={item.calories}
                         />
                       ))}
                     </div>

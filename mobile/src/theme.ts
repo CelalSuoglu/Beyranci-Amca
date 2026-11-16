@@ -1,0 +1,20 @@
+/** Web sitesindeki globals.css renkleri */
+export const colors = {
+  background: "#0c0a09",
+  surface: "#141110",
+  surfaceElevated: "#1c1816",
+  foreground: "#f5f0e8",
+  muted: "#a8a095",
+  accent: "#ea580c",
+  accentSoft: "#fdba74",
+  accentForeground: "#1a0a06",
+  gold: "#d4af37",
+  goldLight: "#e8c76a",
+  goldPale: "#fde68a",
+  border: "rgba(255,255,255,0.08)",
+  borderStrong: "rgba(255,255,255,0.12)",
+  danger: "#fecaca",
+  dangerBg: "rgba(127,29,29,0.4)",
+  success: "#34d399",
+  warning: "#fcd34d",
+} as const;

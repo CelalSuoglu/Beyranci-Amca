@@ -286,14 +286,20 @@ export function KitchenDashboard() {
     setUpdatingId(orderId);
     setError(null);
     try {
-      const supabase = createClient();
-      const { error: updateError } = await supabase
-        .from("orders")
-        .update({ status })
-        .eq("id", orderId);
+      // Sunucu: yetki kontrolü + geçiş kuralı + müşteriye bildirim
+      const res = await fetch(`/api/orders/${orderId}/status`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status }),
+      });
+      const body = (await res.json().catch(() => null)) as { error?: string } | null;
 
-      if (updateError) {
-        setError("Durum güncellenemedi. Tekrar deneyin.");
+      if (!res.ok) {
+        setError(body?.error ?? "Durum güncellenemedi. Tekrar deneyin.");
+      } else {
+        setOrders((prev) =>
+          prev.map((o) => (o.id === orderId ? { ...o, status } : o)),
+        );
       }
     } catch {
       setError("Durum güncellenirken bağlantı kesildi.");

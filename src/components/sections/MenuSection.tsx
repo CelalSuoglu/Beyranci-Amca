@@ -2,7 +2,7 @@ import { cn } from "@/lib/utils";
 import { section, card } from "@/lib/site-styles";
 import { Container } from "@/components/ui/Container";
 import { SectionHeading } from "@/components/ui/SectionHeading";
-import { menuCategories } from "@/lib/menu-data";
+import { menuCategories as codeMenu, type MenuCategory } from "@/lib/menu-data";
 
 function CategoryHeading({ title }: { title: string }) {
   return (
@@ -18,18 +18,29 @@ function CategoryHeading({ title }: { title: string }) {
   );
 }
 
+function Kcal({ value }: { value?: number }) {
+  if (!value) return null;
+  return (
+    <span className="ml-2 whitespace-nowrap text-xs font-normal text-[var(--foreground-muted)]">
+      {value} kcal
+    </span>
+  );
+}
+
 function MenuCard({
   name,
   price,
   options,
   description,
   descriptionList,
+  calories,
 }: {
   name: string;
   price?: string;
   options?: { name: string; price: string }[];
   description?: string;
   descriptionList?: string[];
+  calories?: number;
 }) {
   return (
     <article
@@ -42,6 +53,7 @@ function MenuCard({
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-6">
         <h4 className="min-w-0 flex-1 font-[family-name:var(--font-display)] text-lg font-semibold leading-snug text-[var(--foreground)] transition-colors group-hover:text-[#fde68a] sm:text-xl">
           {name}
+          <Kcal value={calories} />
         </h4>
         {price ? (
           <p className="shrink-0 font-semibold tabular-nums tracking-tight text-[#e8c76a] sm:pt-0.5 sm:text-right">
@@ -85,7 +97,7 @@ function MenuCard({
   );
 }
 
-function MenuRow({ name, price }: { name: string; price: string }) {
+function MenuRow({ name, price, calories }: { name: string; price: string; calories?: number }) {
   return (
     <div className="group relative flex min-h-[3rem] items-baseline justify-between gap-4 border-b border-white/[0.06] py-3.5 first:pt-0 last:border-0 last:pb-0 sm:gap-8">
       <div
@@ -94,6 +106,7 @@ function MenuRow({ name, price }: { name: string; price: string }) {
       />
       <span className="relative min-w-0 flex-1 text-[0.9375rem] font-medium leading-snug text-[#ebe4dc] transition-colors group-hover:text-[var(--foreground)] sm:text-base">
         {name}
+        <Kcal value={calories} />
       </span>
       <span className="relative shrink-0 font-semibold tabular-nums text-[#d4af37]/95">
         {price}
@@ -102,7 +115,11 @@ function MenuRow({ name, price }: { name: string; price: string }) {
   );
 }
 
-export function MenuSection() {
+export function MenuSection({
+  categories = codeMenu,
+}: {
+  categories?: MenuCategory[];
+}) {
   return (
     <section
       id="menu"
@@ -113,7 +130,7 @@ export function MenuSection() {
         <SectionHeading titleId="menu-heading" title="Menü" />
 
         <div className="mx-auto mt-8 max-w-4xl space-y-12 sm:mt-10 sm:space-y-14 lg:space-y-16">
-          {menuCategories.map((category) => (
+          {categories.map((category) => (
             <div key={category.id}>
               <CategoryHeading title={category.title} />
 
@@ -128,23 +145,27 @@ export function MenuSection() {
                         options={item.options}
                         description={item.description}
                         descriptionList={item.descriptionList}
+                        calories={item.calories}
                       />
                     ))}
                   </div>
-                  {category.subSectionTitle && category.subSectionItems?.length ? (
+                  {category.subSectionItems?.length ? (
                     <div
                       className={cn(
                         "rounded-2xl border border-white/[0.07] bg-[var(--surface)]/85 px-5 py-4 shadow-inner shadow-black/25 sm:px-8 sm:py-5",
                       )}
                     >
-                      <h4 className="mb-3 font-[family-name:var(--font-display)] text-base font-semibold tracking-tight text-[#f5f0e8] sm:text-lg">
-                        {category.subSectionTitle}
-                      </h4>
+                      {category.subSectionTitle ? (
+                        <h4 className="mb-3 font-[family-name:var(--font-display)] text-base font-semibold tracking-tight text-[#f5f0e8] sm:text-lg">
+                          {category.subSectionTitle}
+                        </h4>
+                      ) : null}
                       {category.subSectionItems.map((item) => (
                         <MenuRow
                           key={item.name}
                           name={item.name}
                           price={item.price}
+                          calories={item.calories}
                         />
                       ))}
                     </div>
@@ -199,6 +220,7 @@ export function MenuSection() {
                           key={item.name}
                           name={item.name}
                           price={item.price}
+                          calories={item.calories}
                         />
                       ))}
                     </div>
