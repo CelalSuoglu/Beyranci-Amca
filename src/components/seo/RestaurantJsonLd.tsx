@@ -41,7 +41,13 @@ export function RestaurantJsonLd() {
       postalCode: "07190",
       addressCountry: "TR",
     },
-    sameAs: [site.instagramUrl.split("?")[0]],
+    geo: {
+      "@type": "GeoCoordinates",
+      latitude: 36.9818403,
+      longitude: 30.6058462,
+    },
+    hasMap: site.googleMapsOpenUrl,
+    sameAs: [site.instagramUrl.split("?")[0], site.googleMapsOpenUrl],
     ...(openingHoursSpecification
       ? { openingHoursSpecification }
       : {}),

@@ -62,10 +62,12 @@ export const site: SiteConfig = {
       { day: "Pazar", hours: "08:30 – 00:00" },
     ],
   },
+  /** Google Haritalar'daki işletme kaydı (place_id ile) */
   googleMapsOpenUrl:
-    "https://www.google.com/maps/search/?api=1&query=Ye%C5%9Filbay%C4%B1r%2C%20Atat%C3%BCrk%20Cd.%20No%3A72%2C%2007190%20D%C3%B6%C5%9Femealt%C4%B1%2FAntalya%2C%20T%C3%BCrkiye",
+    "https://www.google.com/maps/search/?api=1&query=BEYRANCI%20AMCA%20D%C3%B6%C5%9Femealt%C4%B1%20Antalya&query_place_id=ChIJP9eq6y6NwxQRukYgwDkgqdM",
+  /** İşletme adıyla arama: haritada "BEYRANCI AMCA" kartı ve yorumları görünür */
   mapsEmbedSrc:
-    "https://www.google.com/maps?q=Ye%C5%9Filbay%C4%B1r%2C%20Atat%C3%BCrk%20Cd.%20No%3A72%2C%2007190%20D%C3%B6%C5%9Femealt%C4%B1%2FAntalya%2C%20T%C3%BCrkiye&output=embed",
+    "https://www.google.com/maps?q=BEYRANCI%20AMCA%2C%20Atat%C3%BCrk%20Cd.%20No%3A72%2C%20Ye%C5%9Filbay%C4%B1r%2C%2007190%20D%C3%B6%C5%9Femealt%C4%B1/Antalya&hl=tr&z=17&output=embed",
 };
 
 /** Navbar + footer hızlı linkler */

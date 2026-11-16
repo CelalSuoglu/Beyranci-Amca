@@ -1,9 +1,9 @@
 import { MAX_DELIVERY_KM } from "./constants";
 
-/** Yeşilbayır, Döşemealtı — teslimat dairesinin merkezi */
+/** Yeşilbayır, Döşemealtı — teslimat dairesinin merkezi (Google Haritalar işletme kaydındaki konum) */
 export const RESTAURANT_LOCATION = {
-  latitude: 36.9898833,
-  longitude: 30.6002771,
+  latitude: 36.9818403,
+  longitude: 30.6058462,
 } as const;
 
 type LatLng = {
