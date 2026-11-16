@@ -17,7 +17,7 @@ CREATE TABLE IF NOT EXISTS public.store_settings (
   last_order_minutes integer NOT NULL DEFAULT 30 CHECK (last_order_minutes BETWEEN 0 AND 180),
   -- 0=Pazartesi … 6=Pazar; {"open":"08:30","close":"00:00","closed":false}; kapanış açılıştan küçükse ertesi gün
   opening_hours jsonb NOT NULL DEFAULT '[
-    {"open":"08:30","close":"00:00","closed":false},
+    {"open":"08:30","close":"00:00","closed":true},
     {"open":"08:30","close":"00:00","closed":false},
     {"open":"08:30","close":"00:00","closed":false},
     {"open":"08:30","close":"00:00","closed":false},

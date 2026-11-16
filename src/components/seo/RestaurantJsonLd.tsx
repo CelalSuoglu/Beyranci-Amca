@@ -2,7 +2,10 @@ import { site, siteUrl } from "@/lib/site";
 
 /** LocalBusiness / Restaurant schema for Google local search */
 export function RestaurantJsonLd() {
-  const openingHoursSpecification = site.hours.weekly?.map((row) => {
+  // Kapalı günler listeye girmez (schema.org: listede olmayan gün kapalı sayılır)
+  const openingHoursSpecification = site.hours.weekly
+    ?.filter((row) => row.hours.includes("–"))
+    .map((row) => {
     const [opens, closes] = row.hours.split("–").map((s) => s.trim());
     const dayMap: Record<string, string> = {
       Pazartesi: "Monday",

@@ -53,7 +53,7 @@ export const site: SiteConfig = {
   hours: {
     label: "Çalışma saatleri",
     weekly: [
-      { day: "Pazartesi", hours: "08:30 – 00:00" },
+      { day: "Pazartesi", hours: "Kapalı" },
       { day: "Salı", hours: "08:30 – 00:00" },
       { day: "Çarşamba", hours: "08:30 – 00:00" },
       { day: "Perşembe", hours: "08:30 – 00:00" },
