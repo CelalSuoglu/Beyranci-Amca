@@ -13,6 +13,7 @@ import {
   type PaymentMethod,
 } from "../../src/lib/orders";
 import { supabase } from "../../src/lib/supabase";
+import { API_URL } from "../../src/lib/api";
 import { colors } from "../../src/theme";
 
 type Detail = {
@@ -29,6 +30,7 @@ type Detail = {
   cancel_reason: string | null;
   cash_change_for: number | null;
   wants_cutlery: boolean;
+  tracking_token: string;
 };
 
 const RESTAURANT_PHONE = "tel:+905340600707";
@@ -43,7 +45,7 @@ export default function OrderDetailScreen() {
   const load = useCallback(async () => {
     if (!id) return;
     const [o, e] = await Promise.all([
-      supabase.from("orders").select("id, order_number, status, items, total, created_at, address, note, payment_method, eta_at, cancel_reason, cash_change_for, wants_cutlery").eq("id", id).maybeSingle(),
+      supabase.from("orders").select("id, order_number, status, items, total, created_at, address, note, payment_method, eta_at, cancel_reason, cash_change_for, wants_cutlery, tracking_token").eq("id", id).maybeSingle(),
       supabase.from("order_events").select("to_status, created_at").eq("order_id", id).order("created_at"),
     ]);
     if (o.error || !o.data) {
@@ -137,6 +139,12 @@ export default function OrderDetailScreen() {
             if (missing) setError(`${missing} ürün artık menüde olmadığı için sepete eklenmedi.`);
           }}
         />
+        <Text
+          onPress={() => void Linking.openURL(`${API_URL}/sozlesme/${order.tracking_token}`)}
+          style={{ color: colors.accentSoft, fontWeight: "600", marginTop: 14 }}
+        >
+          Sipariş sözleşmesi (görüntüle / kaydet)
+        </Text>
         <Text onPress={() => void Linking.openURL(RESTAURANT_PHONE)} style={{ color: colors.accentSoft, fontWeight: "600", marginTop: 14 }}>
           Restoranı ara: 0534 060 07 07
         </Text>

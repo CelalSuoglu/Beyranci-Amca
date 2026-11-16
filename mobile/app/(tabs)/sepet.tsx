@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from "react";
-import { Alert, Pressable, Text, View } from "react-native";
+import { Alert, Linking, Pressable, Text, View } from "react-native";
 import { router } from "expo-router";
 import { useAuth } from "../../src/context/AuthContext";
 import { useCart } from "../../src/context/CartContext";
 import { Button, Card, Chip, Input, Message, Muted, Screen, Title } from "../../src/components/ui";
-import { apiFetch, newIdempotencyKey } from "../../src/lib/api";
+import { API_URL, apiFetch, newIdempotencyKey } from "../../src/lib/api";
 import { StoreBanner } from "../../src/components/StoreBanner";
 import { useStore } from "../../src/lib/useStore";
 import { registerForPush } from "../../src/lib/notifications";
@@ -31,6 +31,7 @@ export default function CartScreen() {
   const [payment, setPayment] = useState<"cash" | "card">("cash");
   const [cashChangeFor, setCashChangeFor] = useState("");
   const [wantsCutlery, setWantsCutlery] = useState(false);
+  const [termsAccepted, setTermsAccepted] = useState(false);
   const store = useStore();
   const [saved, setSaved] = useState<SavedAddress[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -74,6 +75,7 @@ export default function CartScreen() {
     if (name.trim().length < 3) return setError("Ad soyad en az 3 karakter olmalı.");
     if (!normalizeTurkishPhone(phone)) return setError("Geçerli bir cep telefonu girin (05XX XXX XX XX).");
     if (address.trim().length < 10) return setError("Teslimat adresini mahalle, sokak ve ilçe ile yazın.");
+    if (!termsAccepted) return setError("Siparişi tamamlamak için Ön Bilgilendirme Formu'nu ve Mesafeli Satış Sözleşmesi'ni onaylayın.");
 
     if (!idemKey.current) idemKey.current = newIdempotencyKey();
     setSending(true);
@@ -88,6 +90,7 @@ export default function CartScreen() {
         paymentMethod: payment,
         cashChangeFor: payment === "cash" ? change : null,
         wantsCutlery,
+        termsAccepted,
         items: lines.map((l) => ({
           productId: l.productId,
           quantity: l.quantity,
@@ -109,6 +112,7 @@ export default function CartScreen() {
     clear();
     setNote("");
     setCashChangeFor("");
+    setTermsAccepted(false);
     if (session) {
       router.push(`/siparis/${res.data.orderId}`);
       // Bildirim iznini bağlam içinde iste: sipariş durumu için
@@ -226,12 +230,33 @@ export default function CartScreen() {
         </View>
       </Pressable>
 
+      <Pressable
+        onPress={() => setTermsAccepted((v) => !v)}
+        accessibilityRole="checkbox"
+        accessibilityState={{ checked: termsAccepted }}
+        style={{ flexDirection: "row", gap: 10, alignItems: "flex-start", marginBottom: 16, borderWidth: 1, borderColor: colors.borderStrong, borderRadius: 12, padding: 12 }}
+      >
+        <View style={{ width: 22, height: 22, borderRadius: 6, borderWidth: 1, borderColor: termsAccepted ? colors.gold : colors.borderStrong, backgroundColor: termsAccepted ? colors.gold : "transparent", alignItems: "center", justifyContent: "center", marginTop: 1 }}>
+          {termsAccepted ? <Text style={{ color: colors.accentForeground, fontWeight: "800" }}>✓</Text> : null}
+        </View>
+        <Text style={{ color: colors.foreground, flex: 1, lineHeight: 20 }}>
+          <Text onPress={() => void Linking.openURL(`${API_URL}/on-bilgilendirme`)} style={{ color: colors.accentSoft, textDecorationLine: "underline" }}>
+            Ön Bilgilendirme Formu
+          </Text>
+          {"'nu ve "}
+          <Text onPress={() => void Linking.openURL(`${API_URL}/mesafeli-satis-sozlesmesi`)} style={{ color: colors.accentSoft, textDecorationLine: "underline" }}>
+            Mesafeli Satış Sözleşmesi
+          </Text>
+          {"'ni okudum, onaylıyorum. Ürünler isteğime göre taze hazırlandığından cayma hakkı bulunmadığını biliyorum."}
+        </Text>
+      </Pressable>
+
       {error ? <Message>{error}</Message> : null}
       <Button
         label={!store.status.open ? "Şu an sipariş alınmıyor" : sending ? "Gönderiliyor…" : `Siparişi onayla · ${formatTry(subtotal)}`}
         onPress={() => void submit()}
         loading={sending}
-        disabled={!meetsMin || !store.status.open}
+        disabled={!meetsMin || !store.status.open || !termsAccepted}
       />
     </Screen>
   );

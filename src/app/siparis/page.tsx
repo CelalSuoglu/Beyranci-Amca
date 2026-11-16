@@ -6,6 +6,8 @@ import { brand } from "@/lib/brand";
 import { site } from "@/lib/site";
 import { getCatalog, getOrderableCategoriesFrom } from "@/lib/menu/catalog";
 import { getStoreSettings } from "@/lib/store/server";
+import { CookieSettingsButton } from "@/components/legal/CookieConsent";
+import { LEGAL_NAV } from "@/components/legal/LegalDocumentView";
 
 export const revalidate = 60;
 
@@ -76,6 +78,27 @@ export default async function SiparisPage() {
       <main id="main-content" className="min-w-0 flex-1" tabIndex={-1}>
         <SiparisPageClient categories={categories} initialStore={store} />
       </main>
+      <footer className="border-t border-white/[0.06] px-5 py-8 pb-[calc(6rem+env(safe-area-inset-bottom,0px))] text-sm text-[var(--foreground-muted)] sm:px-8">
+        <nav aria-label="Yasal metinler" className="mx-auto max-w-6xl">
+          <ul className="flex flex-wrap gap-x-5 gap-y-2.5">
+            {LEGAL_NAV.map((l) => (
+              <li key={l.href}>
+                <Link href={l.href} className="hover:text-[var(--accent-soft)]">
+                  {l.label}
+                </Link>
+              </li>
+            ))}
+            <li>
+              <Link href="/yasal" className="hover:text-[var(--accent-soft)]">
+                Satıcı bilgileri
+              </Link>
+            </li>
+            <li>
+              <CookieSettingsButton className="hover:text-[var(--accent-soft)]" />
+            </li>
+          </ul>
+        </nav>
+      </footer>
     </div>
   );
 }

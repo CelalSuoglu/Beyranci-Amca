@@ -21,7 +21,7 @@ export default async function SiparisDetayPage({ params }: { params: Promise<{ i
 
   const { data: order } = await supabase
     .from("orders")
-    .select("id, order_number, status, items, total, created_at, address, note, payment_method, user_id, eta_at, cancel_reason, cash_change_for, wants_cutlery")
+    .select("id, order_number, status, items, total, created_at, address, note, payment_method, user_id, eta_at, cancel_reason, cash_change_for, wants_cutlery, tracking_token")
     .eq("id", id)
     .eq("user_id", user.id)
     .maybeSingle();
@@ -80,6 +80,14 @@ export default async function SiparisDetayPage({ params }: { params: Promise<{ i
               </div>
             ) : null}
           </dl>
+          <a
+            href={`/sozlesme/${order.tracking_token}`}
+            target="_blank"
+            rel="noopener"
+            className="mt-5 inline-flex text-sm font-medium text-[#fdba74] hover:underline"
+          >
+            Sipariş sözleşmesi (yazdır / kaydet)
+          </a>
           <div className="mt-5">
             <ReorderButton items={(order.items ?? []) as { productId: string; quantity: number }[]} />
           </div>

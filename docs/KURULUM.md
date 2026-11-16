@@ -12,7 +12,18 @@ Sıra önemli. **Önce veritabanı, sonra web, sonra mobil.**
      menüyü basılı menüye (Kasım 2026) günceller, kalori kolonunu ekler, listede olmayan ürünleri siler.
    - Son olarak **`supabase/migrations/20261117_store_settings.sql`**: sipariş açık/kapalı, çalışma saatleri,
      tahmini süre, duyuru; para üstü, servis tercihi, teslim saati, iptal nedeni; ürün görselleri.
-   - ✅ 16 Kasım 2026: üç dosya da canlı veritabanında çalıştırıldı.
+   - **`20261118_order_terms.sql`**: siparişte onaylanan sözleşme sürümü ve zamanı.
+   - ✅ 16 Kasım 2026: dört dosya da canlı veritabanında çalıştırıldı.
+
+## Yasal metinler
+
+- Metinler: `src/lib/legal/documents.ts` · Satıcı bilgileri: `src/lib/legal.ts` (unvan, vergi no, e-posta **doldurulmalı**).
+- Metni değiştirince `LEGAL_VERSION`'ı güncelle; her sipariş onayladığı sürümü saklar.
+- Sayfalar: /on-bilgilendirme, /mesafeli-satis-sozlesmesi, /iptal-ve-iade, /teslimat-kosullari, /gizlilik,
+  /cerez-politikasi, /kullanim-kosullari, /erisilebilirlik, /yasal; siparişe özel: /sozlesme/[takip-anahtarı].
+- Google Analytics yalnızca çerez onayından sonra yüklenir.
+- Yayından önce bir avukat / mali müşavire kontrol ettir. Yurt dışı aktarım (Vercel, Supabase, Expo, Google ABD'de)
+  için KVKK m.9 kapsamında standart sözleşme yükümlülüğünü danış.
 2. **Authentication → URL Configuration**
    - Site URL: `https://beyranciamca.com`
    - Redirect URLs: `https://beyranciamca.com/auth/callback` ve `http://localhost:3000/auth/callback`

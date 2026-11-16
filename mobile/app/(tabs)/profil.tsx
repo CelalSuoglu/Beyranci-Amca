@@ -102,10 +102,30 @@ export default function ProfileTab() {
   );
 }
 
+const LEGAL_LINKS = [
+  ["KVKK Aydınlatma Metni", "/gizlilik"],
+  ["Ön Bilgilendirme Formu", "/on-bilgilendirme"],
+  ["Mesafeli Satış Sözleşmesi", "/mesafeli-satis-sozlesmesi"],
+  ["İptal ve İade", "/iptal-ve-iade"],
+  ["Teslimat Koşulları", "/teslimat-kosullari"],
+  ["Kullanım Koşulları", "/kullanim-kosullari"],
+  ["Satıcı bilgileri", "/yasal"],
+] as const;
+
 function LegalLinks() {
   return (
-    <Text onPress={() => void Linking.openURL(`${API_URL}/gizlilik`)} style={{ color: colors.muted, textAlign: "center", marginTop: 24, fontSize: 13 }}>
-      Gizlilik ve KVKK aydınlatma metni
-    </Text>
+    <View style={{ marginTop: 24, gap: 10, alignItems: "center" }} accessibilityRole="list">
+      <Text style={{ color: colors.gold, fontSize: 11, fontWeight: "700", letterSpacing: 2 }}>YASAL</Text>
+      {LEGAL_LINKS.map(([label, path]) => (
+        <Text
+          key={path}
+          accessibilityRole="link"
+          onPress={() => void Linking.openURL(`${API_URL}${path}`)}
+          style={{ color: colors.muted, fontSize: 13 }}
+        >
+          {label}
+        </Text>
+      ))}
+    </View>
   );
 }

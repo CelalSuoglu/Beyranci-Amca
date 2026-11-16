@@ -47,6 +47,10 @@ export const createOrderInputSchema = z.object({
   cashChangeFor: z.number().min(0).max(100000).nullable().optional(),
   /** Plastik çatal-bıçak ve peçete */
   wantsCutlery: z.boolean().optional(),
+  /** Ön Bilgilendirme Formu ve Mesafeli Satış Sözleşmesi onayı (zorunlu) */
+  termsAccepted: z
+    .boolean()
+    .refine((v) => v === true, "Siparişi tamamlamak için Ön Bilgilendirme Formu'nu ve Mesafeli Satış Sözleşmesi'ni onaylayın."),
   /** Aynı isteğin tekrar gönderilmesinde ikinci sipariş oluşmasın */
   idempotencyKey: z.string().trim().min(8).max(100).optional(),
   items: z

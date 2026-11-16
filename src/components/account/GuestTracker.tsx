@@ -71,6 +71,14 @@ export function GuestTracker({ token }: { token: string }) {
       </Card>
       <Card>
         <OrderItems items={data.order.items} total={Number(data.order.total)} />
+        <a
+          href={`/sozlesme/${token}`}
+          target="_blank"
+          rel="noopener"
+          className="mt-5 inline-flex text-sm font-medium text-[#fdba74] hover:underline"
+        >
+          Sipariş sözleşmesi (yazdır / kaydet)
+        </a>
       </Card>
     </div>
   );

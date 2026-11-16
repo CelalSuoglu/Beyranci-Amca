@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { DM_Sans, Playfair_Display } from "next/font/google";
-import Script from "next/script";
+import { CookieConsent } from "@/components/legal/CookieConsent";
 import { SkipLink } from "@/components/layout/SkipLink";
 import { RestaurantJsonLd } from "@/components/seo/RestaurantJsonLd";
 import { siteUrl } from "@/lib/site";
@@ -79,18 +79,8 @@ export default function RootLayout({
       className={`${display.variable} ${sans.variable} h-full scroll-smooth antialiased`}
     >
       <body className="min-h-full flex flex-col bg-[var(--background)] text-[var(--foreground)]">
-        <Script
-          src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`}
-          strategy="afterInteractive"
-        />
-        <Script id="google-analytics" strategy="afterInteractive">
-          {`
-            window.dataLayer = window.dataLayer || [];
-            function gtag(){dataLayer.push(arguments);}
-            gtag('js', new Date());
-            gtag('config', '${GA_MEASUREMENT_ID}');
-          `}
-        </Script>
+        {/* Google Analytics yalnızca çerez onayından sonra yüklenir (KVKK) */}
+        <CookieConsent gaId={GA_MEASUREMENT_ID} />
         <RestaurantJsonLd />
         <SkipLink />
         {children}

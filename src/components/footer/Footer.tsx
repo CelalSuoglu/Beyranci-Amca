@@ -4,6 +4,9 @@ import { site, navItems } from "@/lib/site";
 import { Container } from "@/components/ui/Container";
 import { OpeningHoursList } from "@/components/ui/OpeningHoursList";
 import { InstagramIcon, WhatsAppIcon } from "@/components/icons/SocialIcons";
+import { CookieSettingsButton } from "@/components/legal/CookieConsent";
+import { LEGAL_NAV } from "@/components/legal/LegalDocumentView";
+import { sellerLines } from "@/lib/legal";
 
 const footerLink =
   "rounded-lg text-sm text-[var(--foreground-muted)] transition-colors hover:text-[var(--accent)]";
@@ -115,13 +118,42 @@ export function Footer() {
           </div>
         </div>
 
-        <div className="mt-14 flex flex-col items-start justify-between gap-4 border-t border-white/[0.08] pt-10 text-xs leading-relaxed text-[var(--foreground-muted)] sm:flex-row sm:items-center">
-          <p>© {new Date().getFullYear()} {site.name}. Tüm hakları saklıdır.</p>
-          <p className="flex flex-wrap gap-x-4 gap-y-2">
-            <a href="/gizlilik" className="hover:text-[var(--accent)]">Gizlilik ve KVKK</a>
-            <a href="/hesabim" className="hover:text-[var(--accent)]">Hesabım</a>
-            <span className="text-[var(--foreground-muted)]/80">Geleneksel lezzet, sıcak karşılama.</span>
+        <nav
+          aria-label="Yasal metinler"
+          className="mt-14 border-t border-white/[0.08] pt-8 text-sm text-[var(--foreground-muted)]"
+        >
+          <ul className="flex flex-wrap gap-x-5 gap-y-2.5">
+            {LEGAL_NAV.map((l) => (
+              <li key={l.href}>
+                <a href={l.href} className="hover:text-[var(--accent)]">
+                  {l.label}
+                </a>
+              </li>
+            ))}
+            <li>
+              <a href="/yasal" className="hover:text-[var(--accent)]">
+                Satıcı bilgileri
+              </a>
+            </li>
+            <li>
+              <CookieSettingsButton className="hover:text-[var(--accent)]" />
+            </li>
+            <li>
+              <a href="/hesabim" className="hover:text-[var(--accent)]">
+                Hesabım
+              </a>
+            </li>
+          </ul>
+        </nav>
+
+        <div className="mt-8 flex flex-col items-start justify-between gap-4 text-xs leading-relaxed text-[var(--foreground-muted)] sm:flex-row sm:items-end">
+          <p className="max-w-xl">
+            {sellerLines()
+              .filter((r) => r.label !== "Marka")
+              .map((r) => r.value)
+              .join(" · ")}
           </p>
+          <p>© {new Date().getFullYear()} {site.name}. Tüm hakları saklıdır.</p>
         </div>
       </Container>
     </footer>

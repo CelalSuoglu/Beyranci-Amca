@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
-import { Text, View } from "react-native";
+import { Linking, Text, View } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import { Button, Card, Loading, Message, Muted, Screen } from "../../src/components/ui";
 import { OrderProgress, StatusBadge, type ProgressEvent } from "../../src/components/OrderProgress";
-import { apiFetch } from "../../src/lib/api";
+import { API_URL, apiFetch } from "../../src/lib/api";
 import { formatOrderTime, formatTry, type OrderItemRecord, type OrderStatus } from "../../src/lib/orders";
 import { colors } from "../../src/theme";
 
@@ -72,6 +72,12 @@ export default function GuestTrackScreen() {
           </Text>
         ))}
         <Text style={{ color: colors.goldLight, fontWeight: "700", marginTop: 8 }}>Toplam {formatTry(Number(data.order.total))}</Text>
+        <Text
+          onPress={() => void Linking.openURL(`${API_URL}/sozlesme/${token}`)}
+          style={{ color: colors.accentSoft, fontWeight: "600", marginTop: 12 }}
+        >
+          Sipariş sözleşmesi (görüntüle / kaydet)
+        </Text>
       </Card>
       <Muted>Bu ekran otomatik güncellenir. Siparişlerinizi her zaman görmek ve bildirim almak için üye olabilirsiniz.</Muted>
       <Button label="Üye ol" variant="outline" onPress={() => router.push("/kayit")} style={{ marginTop: 12 }} />

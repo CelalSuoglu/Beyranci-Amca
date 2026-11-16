@@ -89,3 +89,14 @@ button:focus-visible {
     animation: none;
   }
 }
+
+/* Yasal metin ve sözleşme yazdırma */
+@media print {
+  body {
+    background: #fff !important;
+    color: #000 !important;
+  }
+  .no-print {
+    display: none !important;
+  }
+}

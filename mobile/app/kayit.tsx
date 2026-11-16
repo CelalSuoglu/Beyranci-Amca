@@ -29,7 +29,7 @@ export default function RegisterScreen() {
       return setError("Şifre en az 8 karakter olmalı, harf ve rakam içermeli.");
     }
     if (password !== password2) return setError("Şifreler aynı değil.");
-    if (!consent) return setError("Devam etmek için aydınlatma metnini onaylayın.");
+    if (!consent) return setError("Devam etmek için Kullanım Koşulları'nı kabul edin.");
 
     setPending(true);
     const { data, error: err } = await supabase.auth.signUp({
@@ -76,10 +76,14 @@ export default function RegisterScreen() {
           {consent ? <Text style={{ color: colors.accentForeground, fontWeight: "800" }}>✓</Text> : null}
         </View>
         <Text style={{ color: colors.muted, flex: 1, lineHeight: 20 }}>
+          <Text onPress={() => void Linking.openURL(`${API_URL}/kullanim-kosullari`)} style={{ color: colors.accentSoft }}>
+            Kullanım Koşulları
+          </Text>
+          {"'nı kabul ediyorum. Kişisel verilerimin "}
           <Text onPress={() => void Linking.openURL(`${API_URL}/gizlilik`)} style={{ color: colors.accentSoft }}>
-            KVKK aydınlatma metnini
-          </Text>{" "}
-          okudum; sipariş hizmeti için bilgilerimin işlenmesini kabul ediyorum.
+            KVKK Aydınlatma Metni
+          </Text>
+          {" kapsamında işleneceği konusunda bilgilendirildim."}
         </Text>
       </Pressable>
       {error ? <Message>{error}</Message> : null}

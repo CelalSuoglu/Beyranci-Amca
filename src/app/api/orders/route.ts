@@ -7,6 +7,7 @@ import { getRequestAuth } from "@/lib/auth/request";
 import { notifyCustomerOrderReceived, notifyStaffNewOrder } from "@/lib/push";
 import { getStoreStatus } from "@/lib/store/hours";
 import { getStoreSettings } from "@/lib/store/server";
+import { LEGAL_VERSION } from "@/lib/legal";
 
 export const runtime = "nodejs";
 
@@ -117,6 +118,8 @@ export async function POST(request: Request) {
       payment_status: "unpaid",
       cash_change_for: order.cashChangeFor,
       wants_cutlery: order.wantsCutlery,
+      terms_version: LEGAL_VERSION,
+      terms_accepted_at: new Date().toISOString(),
     })
     .select(RETURN_FIELDS)
     .single();

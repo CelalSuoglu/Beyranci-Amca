@@ -36,7 +36,7 @@ export function RegisterForm() {
       return setError("Şifre en az bir harf ve bir rakam içermeli.");
     }
     if (password !== password2) return setError("Şifreler aynı değil.");
-    if (!consent) return setError("Devam etmek için aydınlatma metnini onaylayın.");
+    if (!consent) return setError("Devam etmek için Kullanım Koşulları'nı kabul edin.");
 
     start(async () => {
       try {
@@ -94,10 +94,14 @@ export function RegisterForm() {
       <label className="flex cursor-pointer items-start gap-3 text-sm leading-relaxed text-[var(--foreground-muted)]">
         <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} className="mt-1 h-4 w-4 shrink-0 accent-[var(--accent)]" />
         <span>
+          <Link href="/kullanim-kosullari" target="_blank" className="text-[#fdba74] underline-offset-2 hover:underline">
+            Kullanım Koşulları
+          </Link>
+          &apos;nı kabul ediyorum. Kişisel verilerimin{" "}
           <Link href="/gizlilik" target="_blank" className="text-[#fdba74] underline-offset-2 hover:underline">
-            KVKK aydınlatma metnini
+            KVKK Aydınlatma Metni
           </Link>{" "}
-          okudum; sipariş hizmeti için bilgilerimin işlenmesini kabul ediyorum.
+          kapsamında işleneceği konusunda bilgilendirildim.
         </span>
       </label>
       {error ? <Alert>{error}</Alert> : null}

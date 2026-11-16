@@ -94,6 +94,7 @@ export function SiparisPageClient({
   const [paymentMethod, setPaymentMethod] = useState<"cash" | "card">("cash");
   const [cashChangeFor, setCashChangeFor] = useState("");
   const [wantsCutlery, setWantsCutlery] = useState(false);
+  const [termsAccepted, setTermsAccepted] = useState(false);
   const [store, setStore] = useState<StoreSettings>(initialStore);
   const [clock, setClock] = useState(() => Date.now());
   const cartHydrated = useRef(false);
@@ -327,6 +328,11 @@ export function SiparisPageClient({
       return;
     }
 
+    if (!termsAccepted) {
+      setError("Siparişi tamamlamak için Ön Bilgilendirme Formu'nu ve Mesafeli Satış Sözleşmesi'ni onaylayın.");
+      return;
+    }
+
     const changeValue = cashChangeFor.trim()
       ? Number(cashChangeFor.replace(/\./g, "").replace(",", "."))
       : null;
@@ -359,6 +365,7 @@ export function SiparisPageClient({
             paymentMethod,
             cashChangeFor: paymentMethod === "cash" ? changeValue : null,
             wantsCutlery,
+            termsAccepted,
             items: cartLines.map((line) => ({
               productId: line.product.id,
               quantity: line.quantity,
@@ -403,6 +410,7 @@ export function SiparisPageClient({
         idempotencyKey.current = null;
         setCart([]);
         setCashChangeFor("");
+        setTermsAccepted(false);
       } catch {
         setError(
           "Bağlantı kurulamadı. İnternetinizi kontrol edip tekrar deneyin.",
@@ -458,6 +466,18 @@ export function SiparisPageClient({
               Yeni sipariş
             </Button>
           </div>
+          {success.trackingToken ? (
+            <p className="mt-6 text-sm">
+              <a
+                href={`/sozlesme/${success.trackingToken}`}
+                target="_blank"
+                rel="noopener"
+                className="text-[#fdba74] underline-offset-2 hover:underline"
+              >
+                Siparişinize özel sözleşmeyi görüntüleyin / kaydedin
+              </a>
+            </p>
+          ) : null}
           {!success.signedIn && success.trackingToken ? (
             <p className="mt-6 text-xs leading-relaxed text-[var(--foreground-muted)]">
               Takip bağlantısını kaydedin. Siparişlerinizi her zaman görmek için{" "}
@@ -1007,6 +1027,34 @@ export function SiparisPageClient({
                 </span>
               </label>
 
+              <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-white/10 p-3 text-sm leading-relaxed">
+                <input
+                  type="checkbox"
+                  required
+                  checked={termsAccepted}
+                  onChange={(e) => setTermsAccepted(e.target.checked)}
+                  className="mt-1 h-4 w-4 shrink-0 accent-[var(--accent)]"
+                />
+                <span>
+                  <a href="/on-bilgilendirme" target="_blank" rel="noopener" className="text-[#fdba74] underline underline-offset-2">
+                    Ön Bilgilendirme Formu
+                  </a>
+                  &apos;nu ve{" "}
+                  <a href="/mesafeli-satis-sozlesmesi" target="_blank" rel="noopener" className="text-[#fdba74] underline underline-offset-2">
+                    Mesafeli Satış Sözleşmesi
+                  </a>
+                  &apos;ni okudum, onaylıyorum. Ürünler isteğime göre taze hazırlandığından cayma hakkı
+                  bulunmadığını biliyorum.
+                  <span className="mt-1 block text-xs text-[var(--foreground-muted)]">
+                    Kişisel verileriniz{" "}
+                    <a href="/gizlilik" target="_blank" rel="noopener" className="underline underline-offset-2">
+                      KVKK Aydınlatma Metni
+                    </a>{" "}
+                    kapsamında işlenir.
+                  </span>
+                </span>
+              </label>
+
               {error ? (
                 <p
                   className="rounded-lg border border-red-500/30 bg-red-950/40 px-3 py-2 text-sm text-[#fecaca]"
@@ -1029,7 +1077,7 @@ export function SiparisPageClient({
               <Button
                 type="submit"
                 className="w-full justify-center"
-                disabled={pending || cartLines.length === 0 || !meetsMinimum || !storeStatus.open}
+                disabled={pending || cartLines.length === 0 || !meetsMinimum || !storeStatus.open || !termsAccepted}
                 aria-busy={pending}
               >
                 {pending
