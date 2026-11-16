@@ -1084,7 +1084,9 @@ export function SiparisPageClient({
                   ? "Sipariş gönderiliyor…"
                   : !storeStatus.open
                     ? "Şu an sipariş alınmıyor"
-                    : `Siparişi onayla · ${formatTry(subtotal)}`}
+                    : subtotal > 0
+                      ? `Siparişi onayla · ${formatTry(subtotal)}`
+                      : "Siparişi onayla"}
               </Button>
             </form>
           </div>
