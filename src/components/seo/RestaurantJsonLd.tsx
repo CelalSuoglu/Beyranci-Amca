@@ -17,7 +17,7 @@ export function RestaurantJsonLd() {
       "@type": "OpeningHoursSpecification",
       dayOfWeek: dayMap[row.day] ?? row.day,
       opens: opens?.replace(".", ":") ?? "08:30",
-      closes: closes?.replace(".", ":") ?? "01:00",
+      closes: closes?.replace(".", ":") ?? "00:00",
     };
   });
 

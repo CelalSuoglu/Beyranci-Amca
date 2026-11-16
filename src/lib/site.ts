@@ -53,13 +53,13 @@ export const site: SiteConfig = {
   hours: {
     label: "Çalışma saatleri",
     weekly: [
-      { day: "Pazartesi", hours: "08:30 – 01:00" },
-      { day: "Salı", hours: "08:30 – 01:00" },
-      { day: "Çarşamba", hours: "08:30 – 01:00" },
-      { day: "Perşembe", hours: "08:30 – 01:00" },
-      { day: "Cuma", hours: "08:30 – 01:00" },
-      { day: "Cumartesi", hours: "08:30 – 01:00" },
-      { day: "Pazar", hours: "08:30 – 01:00" },
+      { day: "Pazartesi", hours: "08:30 – 00:00" },
+      { day: "Salı", hours: "08:30 – 00:00" },
+      { day: "Çarşamba", hours: "08:30 – 00:00" },
+      { day: "Perşembe", hours: "08:30 – 00:00" },
+      { day: "Cuma", hours: "08:30 – 00:00" },
+      { day: "Cumartesi", hours: "08:30 – 00:00" },
+      { day: "Pazar", hours: "08:30 – 00:00" },
     ],
   },
   googleMapsOpenUrl:

@@ -15,15 +15,15 @@ CREATE TABLE IF NOT EXISTS public.store_settings (
   eta_max integer NOT NULL DEFAULT 50 CHECK (eta_max BETWEEN 5 AND 240),
   -- Kapanıştan kaç dakika önce paket sipariş alımı biter
   last_order_minutes integer NOT NULL DEFAULT 30 CHECK (last_order_minutes BETWEEN 0 AND 180),
-  -- 0=Pazartesi … 6=Pazar; {"open":"08:30","close":"01:00","closed":false}; kapanış açılıştan küçükse ertesi gün
+  -- 0=Pazartesi … 6=Pazar; {"open":"08:30","close":"00:00","closed":false}; kapanış açılıştan küçükse ertesi gün
   opening_hours jsonb NOT NULL DEFAULT '[
-    {"open":"08:30","close":"01:00","closed":false},
-    {"open":"08:30","close":"01:00","closed":false},
-    {"open":"08:30","close":"01:00","closed":false},
-    {"open":"08:30","close":"01:00","closed":false},
-    {"open":"08:30","close":"01:00","closed":false},
-    {"open":"08:30","close":"01:00","closed":false},
-    {"open":"08:30","close":"01:00","closed":false}
+    {"open":"08:30","close":"00:00","closed":false},
+    {"open":"08:30","close":"00:00","closed":false},
+    {"open":"08:30","close":"00:00","closed":false},
+    {"open":"08:30","close":"00:00","closed":false},
+    {"open":"08:30","close":"00:00","closed":false},
+    {"open":"08:30","close":"00:00","closed":false},
+    {"open":"08:30","close":"00:00","closed":false}
   ]'::jsonb CHECK (jsonb_typeof(opening_hours) = 'array' AND jsonb_array_length(opening_hours) = 7),
   updated_at timestamptz NOT NULL DEFAULT now(),
   CONSTRAINT store_settings_eta_order CHECK (eta_min <= eta_max)
