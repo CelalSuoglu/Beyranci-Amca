@@ -22,6 +22,7 @@ export type AdminProduct = {
   spice_levels: string[] | null;
   requires_garlic: boolean;
   calories: number | null;
+  image_url: string | null;
 };
 
 export function slugify(input: string): string {

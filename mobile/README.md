@@ -8,6 +8,10 @@ Tek uygulama, role göre farklı ekranlar:
 | Müşteri | Menü · Sepet · Siparişlerim (canlı) · Hesabım (profil, adresler, bildirim, hesap silme) |
 | Personel / Yönetici | + **Panel** (canlı sipariş, alarm, durum güncelleme). Yönetici web'deki /yonetim'i açar |
 
+Paket sipariş: açık/kapalı durumu ve çalışma saatleri (canlı), tahmini süre, duyuru, ürün fotoğrafları,
+para üstü ve çatal-bıçak tercihi, tahmini teslim saati, iptal nedeni, tekrar sipariş. Personel: süre seçerek
+onaylama, iptal nedeni, günlük özet, "siparişleri durdur".
+
 Ekran gizlemek sadece görünüm içindir. Her veri erişimi Supabase kuralları (RLS) ve web API'leriyle denetlenir.
 
 ## Yapı

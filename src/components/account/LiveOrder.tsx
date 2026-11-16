@@ -10,13 +10,19 @@ export function LiveOrderStatus({
   orderId,
   initialStatus,
   initialEvents,
+  initialEtaAt = null,
+  initialCancelReason = null,
 }: {
   orderId: string;
   initialStatus: OrderStatus;
   initialEvents: ProgressEvent[];
+  initialEtaAt?: string | null;
+  initialCancelReason?: string | null;
 }) {
   const [status, setStatus] = useState(initialStatus);
   const [events, setEvents] = useState(initialEvents);
+  const [etaAt, setEtaAt] = useState(initialEtaAt);
+  const [cancelReason, setCancelReason] = useState(initialCancelReason);
 
   useEffect(() => {
     const supabase = createClient();
@@ -24,11 +30,13 @@ export function LiveOrderStatus({
 
     const refresh = async () => {
       const [{ data: order }, { data: ev }] = await Promise.all([
-        supabase.from("orders").select("status").eq("id", orderId).maybeSingle(),
+        supabase.from("orders").select("status, eta_at, cancel_reason").eq("id", orderId).maybeSingle(),
         supabase.from("order_events").select("to_status, created_at").eq("order_id", orderId).order("created_at"),
       ]);
       if (cancelled) return;
       if (order?.status) setStatus(order.status as OrderStatus);
+      setEtaAt((order?.eta_at as string | null) ?? null);
+      setCancelReason((order?.cancel_reason as string | null) ?? null);
       if (ev) setEvents(ev as ProgressEvent[]);
     };
 
@@ -60,7 +68,7 @@ export function LiveOrderStatus({
         <span className="text-sm text-[var(--foreground-muted)]">Durum</span>
         <StatusBadge status={status} />
       </div>
-      <OrderProgress status={status} events={events} />
+      <OrderProgress status={status} events={events} etaAt={etaAt} cancelReason={cancelReason} />
     </div>
   );
 }

@@ -1,5 +1,5 @@
 import { ORDER_STATUS_LABELS, type OrderStatus } from "@/lib/orders/constants";
-import { formatOrderTime, formatTry } from "@/lib/orders/format";
+import { formatClockTR, formatOrderTime, formatTry } from "@/lib/orders/format";
 import { cn } from "@/lib/utils";
 
 const STEPS: { status: OrderStatus; label: string }[] = [
@@ -13,18 +13,40 @@ const STEPS: { status: OrderStatus; label: string }[] = [
 
 export type ProgressEvent = { to_status: OrderStatus; created_at: string };
 
-export function OrderProgress({ status, events }: { status: OrderStatus; events: ProgressEvent[] }) {
+export function OrderProgress({
+  status,
+  events,
+  etaAt,
+  cancelReason,
+}: {
+  status: OrderStatus;
+  events: ProgressEvent[];
+  etaAt?: string | null;
+  cancelReason?: string | null;
+}) {
   if (status === "cancelled") {
     return (
       <p className="rounded-xl border border-red-500/30 bg-red-950/40 px-4 py-3 text-sm text-[#fecaca]">
-        Bu sipariş iptal edildi. Sorunuz varsa restoranı arayabilirsiniz.
+        Bu sipariş iptal edildi{cancelReason ? `: ${cancelReason}` : "."} Sorunuz varsa restoranı
+        arayabilirsiniz.
       </p>
     );
   }
+  const showEta = etaAt && status !== "completed";
   const reached = new Map(events.map((e) => [e.to_status, e.created_at]));
   const currentIndex = Math.max(0, STEPS.findIndex((s) => s.status === status));
 
   return (
+    <div>
+    {showEta ? (
+      <p className="mb-4 rounded-xl border border-[#d4af37]/35 bg-[#d4af37]/10 px-4 py-3 text-[#fde68a]">
+        Tahmini teslimat: <strong className="text-lg">{formatClockTR(etaAt)}</strong>
+      </p>
+    ) : status === "new" ? (
+      <p className="mb-4 text-sm text-[var(--foreground-muted)]">
+        Restoran siparişinizi onayladığında tahmini teslim saati burada görünecek.
+      </p>
+    ) : null}
     <ol className="space-y-0" aria-label="Sipariş durumu">
       {STEPS.map((step, i) => {
         const done = i <= currentIndex;
@@ -64,6 +86,7 @@ export function OrderProgress({ status, events }: { status: OrderStatus; events:
         );
       })}
     </ol>
+    </div>
   );
 }
 

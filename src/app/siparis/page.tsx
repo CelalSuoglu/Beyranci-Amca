@@ -5,6 +5,7 @@ import { SiparisPageClient } from "@/components/orders/SiparisPageClient";
 import { brand } from "@/lib/brand";
 import { site } from "@/lib/site";
 import { getCatalog, getOrderableCategoriesFrom } from "@/lib/menu/catalog";
+import { getStoreSettings } from "@/lib/store/server";
 
 export const revalidate = 60;
 
@@ -20,6 +21,7 @@ export const metadata: Metadata = {
 export default async function SiparisPage() {
   const catalog = await getCatalog();
   const categories = getOrderableCategoriesFrom(catalog.orderable);
+  const store = await getStoreSettings();
   return (
     <div className="flex min-h-full min-w-0 flex-col">
       <header className="sticky top-0 z-40 border-b border-white/[0.06] bg-[var(--surface)]/95 backdrop-blur-md">
@@ -72,7 +74,7 @@ export default async function SiparisPage() {
         </div>
       </header>
       <main id="main-content" className="min-w-0 flex-1" tabIndex={-1}>
-        <SiparisPageClient categories={categories} />
+        <SiparisPageClient categories={categories} initialStore={store} />
       </main>
     </div>
   );

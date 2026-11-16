@@ -11,12 +11,15 @@ export type CardMenuItem = {
   descriptionList?: string[];
   /** Kalori (kcal) — yalnızca basılı menüde yazanlar */
   calories?: number;
+  /** Ürün görseli (public/ altında yol veya tam URL) */
+  image?: string;
 };
 
 export type RowMenuItem = {
   name: string;
   price: string;
   calories?: number;
+  image?: string;
 };
 
 export type MenuCategory =
@@ -51,6 +54,7 @@ export const menuCategories: MenuCategory[] = [
         price: "450,00 TL",
         description: "Kuzu boyun ve kol eti, pirinç ve şifasıyla ilik suyu.",
         calories: 330,
+        image: "/images/menu/beyran.jpg",
       },
       {
         name: "Süzme Mercimek",
@@ -79,6 +83,7 @@ export const menuCategories: MenuCategory[] = [
         description:
           "Kuzu ciğer, soğan piyazı ve harmanlanmış baharat çeşitleri.",
         calories: 500,
+        image: "/images/menu/kavurma.jpg",
       },
     ],
   },
@@ -92,17 +97,18 @@ export const menuCategories: MenuCategory[] = [
         price: "200,00 TL",
         description:
           "Sarımsak, domates, maydanoz, taze biber ve özel Gaziantep baharatlarıyla hazırlanan harç, çıtır çıtır hamur.",
+        image: "/images/menu/lahmacun.jpg",
       },
     ],
     subSectionItems: [
-      { name: "Kaşarlı Lahmacun", price: "225,00 TL" },
-      { name: "Kaşarlı Pide", price: "275,00 TL" },
-      { name: "Kıymalı Pide", price: "350,00 TL" },
-      { name: "Kuşbaşılı Pide", price: "400,00 TL" },
-      { name: "Kıymalı Kaşarlı Pide", price: "375,00 TL" },
-      { name: "Kuşbaşı Kaşar Pide", price: "425,00 TL" },
-      { name: "Sucuk Kaşar Pide", price: "325,00 TL" },
-      { name: "Kavurma Kaşar Pide", price: "450,00 TL" },
+      { name: "Kaşarlı Lahmacun", price: "225,00 TL", image: "/images/menu/lahmacun.jpg" },
+      { name: "Kaşarlı Pide", price: "275,00 TL", image: "/images/menu/pide.jpg" },
+      { name: "Kıymalı Pide", price: "350,00 TL", image: "/images/menu/pide.jpg" },
+      { name: "Kuşbaşılı Pide", price: "400,00 TL", image: "/images/menu/pide.jpg" },
+      { name: "Kıymalı Kaşarlı Pide", price: "375,00 TL", image: "/images/menu/pide.jpg" },
+      { name: "Kuşbaşı Kaşar Pide", price: "425,00 TL", image: "/images/menu/pide.jpg" },
+      { name: "Sucuk Kaşar Pide", price: "325,00 TL", image: "/images/menu/pide.jpg" },
+      { name: "Kavurma Kaşar Pide", price: "450,00 TL", image: "/images/menu/pide.jpg" },
     ],
   },
   {

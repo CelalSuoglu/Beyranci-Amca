@@ -8,7 +8,15 @@ import { formatOrderTime, formatTry, type OrderItemRecord, type OrderStatus } fr
 import { colors } from "../../src/theme";
 
 type Track = {
-  order: { order_number: string; status: OrderStatus; items: OrderItemRecord[]; total: number; created_at: string };
+  order: {
+    order_number: string;
+    status: OrderStatus;
+    items: OrderItemRecord[];
+    total: number;
+    created_at: string;
+    eta_at: string | null;
+    cancel_reason: string | null;
+  };
   events: ProgressEvent[];
 };
 
@@ -49,7 +57,12 @@ export default function GuestTrackScreen() {
         <Text style={{ color: colors.muted, marginBottom: 12 }}>{formatOrderTime(data.order.created_at)}</Text>
         <StatusBadge status={data.order.status} />
         <View style={{ marginTop: 16 }}>
-          <OrderProgress status={data.order.status} events={data.events} />
+          <OrderProgress
+            status={data.order.status}
+            events={data.events}
+            etaAt={data.order.eta_at}
+            cancelReason={data.order.cancel_reason}
+          />
         </View>
       </Card>
       <Card>

@@ -13,6 +13,8 @@ type TrackData = {
     items: OrderItemView[];
     total: number;
     created_at: string;
+    eta_at: string | null;
+    cancel_reason: string | null;
   };
   events: ProgressEvent[];
 };
@@ -59,7 +61,12 @@ export function GuestTracker({ token }: { token: string }) {
           {!finished ? <span className="text-xs text-[var(--foreground-muted)]">Otomatik güncellenir</span> : null}
         </div>
         <div className="mt-5">
-          <OrderProgress status={data.order.status} events={data.events} />
+          <OrderProgress
+            status={data.order.status}
+            events={data.events}
+            etaAt={data.order.eta_at}
+            cancelReason={data.order.cancel_reason}
+          />
         </div>
       </Card>
       <Card>

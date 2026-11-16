@@ -4,11 +4,14 @@ import { router } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useCart } from "../../src/context/CartContext";
 import { Button, Loading, Message } from "../../src/components/ui";
+import { StoreBanner } from "../../src/components/StoreBanner";
+import { useStore } from "../../src/lib/useStore";
 import { MIN_ORDER_TOTAL_TL, MAX_DELIVERY_KM, formatTry } from "../../src/lib/orders";
 import { colors } from "../../src/theme";
 
 export default function MenuScreen() {
   const { catalog, catalogLoading, catalogError, reloadCatalog, count, subtotal } = useCart();
+  const store = useStore();
   const [refreshing, setRefreshing] = useState(false);
   const [active, setActive] = useState(0);
   const listRef = useRef<SectionList>(null);
@@ -61,6 +64,7 @@ export default function MenuScreen() {
         stickySectionHeadersEnabled={false}
         contentContainerStyle={{ padding: 16, paddingBottom: count > 0 ? 110 : 32 }}
         onScrollToIndexFailed={() => undefined}
+        ListHeaderComponent={<StoreBanner settings={store.settings} status={store.status} />}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -80,6 +84,9 @@ export default function MenuScreen() {
             accessibilityRole="button"
             accessibilityHint="Ürün seçeneklerini açar"
           >
+            {item.imageUrl ? (
+              <Image source={{ uri: item.imageUrl }} style={s.thumb} accessibilityIgnoresInvertColors />
+            ) : null}
             <View style={{ flex: 1 }}>
               <Text style={s.itemName}>
                 {item.name}
@@ -138,6 +145,7 @@ const s = StyleSheet.create({
     marginBottom: 10,
   },
   itemName: { color: colors.foreground, fontWeight: "600", fontSize: 16 },
+  thumb: { width: 64, height: 64, borderRadius: 10, backgroundColor: colors.surfaceElevated },
   kcal: { color: colors.muted, fontSize: 12, fontWeight: "400" },
   itemDesc: { color: colors.muted, fontSize: 13, marginTop: 4, lineHeight: 18 },
   itemTag: { color: colors.accentSoft, fontSize: 12, marginTop: 6 },

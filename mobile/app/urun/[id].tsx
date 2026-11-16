@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Text, View } from "react-native";
+import { Image, Text, View } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import { useCart } from "../../src/context/CartContext";
 import { Button, Card, Chip, Message, Screen } from "../../src/components/ui";
@@ -32,6 +32,14 @@ export default function ProductScreen() {
 
   return (
     <Screen edges={["left", "right", "bottom"]}>
+      {product.imageUrl ? (
+        <Image
+          source={{ uri: product.imageUrl }}
+          style={{ width: "100%", aspectRatio: 16 / 10, borderRadius: 16, marginBottom: 16, backgroundColor: colors.surfaceElevated }}
+          resizeMode="cover"
+          accessibilityIgnoresInvertColors
+        />
+      ) : null}
       <Text style={{ color: colors.foreground, fontSize: 24, fontWeight: "700" }}>{product.name}</Text>
       <Text style={{ color: colors.goldLight, fontSize: 18, fontWeight: "700", marginTop: 6 }}>
         {formatTry(product.unitPrice)}

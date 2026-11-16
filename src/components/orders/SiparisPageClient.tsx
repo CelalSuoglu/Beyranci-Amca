@@ -1,7 +1,13 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
+import Image from "next/image";
 import { createClient } from "@/lib/supabase/client";
+import {
+  getStoreStatus,
+  normalizeStoreSettings,
+  type StoreSettings,
+} from "@/lib/store/hours";
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
 import { Container } from "@/components/ui/Container";
@@ -56,7 +62,15 @@ function cartKey(
   return [productId, spice ?? "", garlic ?? ""].join("__");
 }
 
-export function SiparisPageClient({ categories }: { categories: OrderCategory[] }) {
+const CART_STORAGE_KEY = "beyranci:cart:v1";
+
+export function SiparisPageClient({
+  categories,
+  initialStore,
+}: {
+  categories: OrderCategory[];
+  initialStore: StoreSettings;
+}) {
   const productMap = useMemo(() => {
     const map = new Map<string, OrderableProduct>();
     for (const category of categories) {
@@ -78,12 +92,65 @@ export function SiparisPageClient({ categories }: { categories: OrderCategory[] 
   const [address, setAddress] = useState("");
   const [note, setNote] = useState("");
   const [paymentMethod, setPaymentMethod] = useState<"cash" | "card">("cash");
+  const [cashChangeFor, setCashChangeFor] = useState("");
+  const [wantsCutlery, setWantsCutlery] = useState(false);
+  const [store, setStore] = useState<StoreSettings>(initialStore);
+  const [clock, setClock] = useState(() => Date.now());
+  const cartHydrated = useRef(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<SuccessState | null>(null);
   const [pending, startTransition] = useTransition();
   const [signedIn, setSignedIn] = useState(false);
   const [savedAddresses, setSavedAddresses] = useState<SavedAddress[]>([]);
   const idempotencyKey = useRef<string | null>(null);
+
+  /** Sepet tarayıcıda saklanır: sayfa yenilense de kaybolmaz (tekrar sipariş de buradan gelir) */
+  useEffect(() => {
+    try {
+      const raw = window.localStorage.getItem(CART_STORAGE_KEY);
+      if (raw) {
+        const saved = JSON.parse(raw) as CartLine[];
+        if (Array.isArray(saved)) {
+          // eslint-disable-next-line react-hooks/set-state-in-effect -- dış kaynaktan (localStorage) bir kez okunur
+          setCart(saved.filter((l) => l && typeof l.productId === "string" && l.quantity > 0));
+        }
+      }
+    } catch {
+      // erişilemezse boş sepetle devam
+    }
+    cartHydrated.current = true;
+  }, []);
+
+  useEffect(() => {
+    if (!cartHydrated.current) return;
+    try {
+      window.localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cart));
+    } catch {
+      // yok say
+    }
+  }, [cart]);
+
+  /** Sipariş açık/kapalı durumu canlı (personel "durdur" derse hemen yansır) */
+  useEffect(() => {
+    const supabase = createClient();
+    const load = async () => {
+      const { data } = await supabase.from("store_settings").select("*").eq("id", 1).maybeSingle();
+      if (data) setStore(normalizeStoreSettings(data as Record<string, unknown>));
+    };
+    const ch = supabase
+      .channel("siparis-store-settings")
+      .on("postgres_changes", { event: "*", schema: "public", table: "store_settings" }, () => void load())
+      .subscribe();
+    const tick = window.setInterval(() => setClock(Date.now()), 30000);
+    const poll = window.setInterval(() => void load(), 120000);
+    return () => {
+      window.clearInterval(tick);
+      window.clearInterval(poll);
+      void supabase.removeChannel(ch);
+    };
+  }, []);
+
+  const storeStatus = useMemo(() => getStoreStatus(store, new Date(clock)), [store, clock]);
 
   /** Giriş yapmış müşteri için ad, telefon ve kayıtlı adresleri doldur */
   useEffect(() => {
@@ -248,11 +315,26 @@ export function SiparisPageClient({ categories }: { categories: OrderCategory[] 
     if (pending || success) return;
     setError(null);
 
+    if (!storeStatus.open) {
+      setError(storeStatus.message);
+      return;
+    }
+
     if (!meetsMinimum) {
       setError(
         `Minimum sipariş tutarı ${formatTry(MIN_ORDER_TOTAL_TL)}. Sepete en az ${formatTry(remaining)} daha ekleyin.`,
       );
       return;
+    }
+
+    const changeValue = cashChangeFor.trim()
+      ? Number(cashChangeFor.replace(/\./g, "").replace(",", "."))
+      : null;
+    if (paymentMethod === "cash" && changeValue !== null) {
+      if (!Number.isFinite(changeValue) || changeValue < subtotal) {
+        setError(`Para üstü için yazdığınız tutar sipariş toplamından (${formatTry(subtotal)}) az olamaz.`);
+        return;
+      }
     }
 
     // Aynı sepet tekrar gönderilirse (çift tıklama, bağlantı kopması) ikinci sipariş oluşmaz
@@ -275,6 +357,8 @@ export function SiparisPageClient({ categories }: { categories: OrderCategory[] 
             address,
             note,
             paymentMethod,
+            cashChangeFor: paymentMethod === "cash" ? changeValue : null,
+            wantsCutlery,
             items: cartLines.map((line) => ({
               productId: line.product.id,
               quantity: line.quantity,
@@ -290,7 +374,16 @@ export function SiparisPageClient({ categories }: { categories: OrderCategory[] 
           total?: number;
           orderId?: string;
           trackingToken?: string;
+          storeClosed?: boolean;
         } | null;
+
+        if (data?.storeClosed) {
+          // Personel o anda siparişleri durdurduysa durumu hemen yenile
+          const latest = await fetch("/api/store", { cache: "no-store" })
+            .then((r) => r.json())
+            .catch(() => null);
+          if (latest?.settings) setStore(latest.settings as StoreSettings);
+        }
 
         if (!res.ok || !data?.orderNumber) {
           setError(
@@ -309,6 +402,7 @@ export function SiparisPageClient({ categories }: { categories: OrderCategory[] 
         });
         idempotencyKey.current = null;
         setCart([]);
+        setCashChangeFor("");
       } catch {
         setError(
           "Bağlantı kurulamadı. İnternetinizi kontrol edip tekrar deneyin.",
@@ -332,7 +426,8 @@ export function SiparisPageClient({ categories }: { categories: OrderCategory[] 
             Teşekkürler!
           </h1>
           <p className="mt-4 text-[var(--foreground-muted)]">
-            Siparişiniz mutfağa iletildi. Sipariş numaranız:
+            Siparişiniz mutfağa iletildi. Restoran onayladığında tahmini
+            teslim saati takip sayfasında görünecek. Sipariş numaranız:
           </p>
           <p className="mt-6 font-[family-name:var(--font-display)] text-2xl font-semibold tracking-wide text-[#e8c76a]">
             {success.orderNumber}
@@ -410,10 +505,39 @@ export function SiparisPageClient({ categories }: { categories: OrderCategory[] 
             {formatTry(MIN_ORDER_TOTAL_TL)}
           </strong>
           . Teslimat yalnızca restorana en fazla {MAX_DELIVERY_KM} km
-          mesafeye yapılır. Lahmacun için acı, beyran için acı ve sarımsak,
-          kebap için acı seçeneği seçin. Ödeme kapıda nakit veya kart ile
-          alınır.
+          mesafeye yapılır. Ödeme kapıda nakit veya kart ile alınır.
         </p>
+
+        <div
+          className={cn(
+            "mt-5 rounded-xl border px-4 py-3 text-sm",
+            storeStatus.open
+              ? "border-emerald-500/30 bg-emerald-950/30 text-emerald-50"
+              : "border-red-500/40 bg-red-950/40 text-[#fecaca]",
+          )}
+          role="status"
+          aria-live="polite"
+        >
+          {storeStatus.open ? (
+            <p>
+              <strong className="font-semibold">Siparişler açık.</strong> Tahmini teslimat{" "}
+              <strong className="font-semibold">
+                {store.eta_min}–{store.eta_max} dk
+              </strong>
+              {storeStatus.lastOrderAt ? ` · Son sipariş ${storeStatus.lastOrderAt}` : ""}
+            </p>
+          ) : (
+            <p>
+              <strong className="font-semibold">Şu an sipariş alınmıyor.</strong>{" "}
+              {storeStatus.message}
+            </p>
+          )}
+        </div>
+        {store.announcement ? (
+          <p className="mt-3 rounded-xl border border-[#d4af37]/35 bg-[#d4af37]/10 px-4 py-3 text-sm text-[#fde68a]">
+            {store.announcement}
+          </p>
+        ) : null}
         <div className="mt-4 flex flex-wrap gap-3 text-sm">
           <Link
             href="/qr-menu"
@@ -502,6 +626,16 @@ export function SiparisPageClient({ categories }: { categories: OrderCategory[] 
                       className="min-w-0 rounded-xl border border-white/[0.08] bg-[var(--surface)]/80 p-3.5 sm:p-5"
                     >
                       <div className="flex items-start justify-between gap-3">
+                        {product.imageUrl ? (
+                          <Image
+                            src={product.imageUrl}
+                            alt=""
+                            width={72}
+                            height={72}
+                            unoptimized={product.imageUrl.startsWith("http")}
+                            className="h-16 w-16 shrink-0 rounded-lg object-cover sm:h-[72px] sm:w-[72px]"
+                          />
+                        ) : null}
                         <div className="min-w-0 flex-1">
                           <h4 className="break-words font-semibold text-[var(--foreground)]">
                             {product.name}
@@ -838,6 +972,41 @@ export function SiparisPageClient({ categories }: { categories: OrderCategory[] 
                 </div>
               </fieldset>
 
+              {paymentMethod === "cash" ? (
+                <div>
+                  <label htmlFor="cashChangeFor" className="block text-sm font-medium">
+                    Kaç TL ile ödeyeceksiniz?{" "}
+                    <span className="font-normal text-[var(--foreground-muted)]">(isteğe bağlı)</span>
+                  </label>
+                  <input
+                    id="cashChangeFor"
+                    inputMode="numeric"
+                    placeholder={`Örn. ${Math.max(2000, Math.ceil((subtotal || 1) / 500) * 500)}`}
+                    value={cashChangeFor}
+                    onChange={(e) => setCashChangeFor(e.target.value.replace(/[^0-9.,]/g, ""))}
+                    className={fieldClass}
+                  />
+                  <p className="mt-1.5 text-xs text-[var(--foreground-muted)]">
+                    Kurye para üstünü hazırlayıp gelsin. Tam para verecekseniz boş bırakın.
+                  </p>
+                </div>
+              ) : null}
+
+              <label className="flex cursor-pointer items-start gap-3 text-sm">
+                <input
+                  type="checkbox"
+                  checked={wantsCutlery}
+                  onChange={(e) => setWantsCutlery(e.target.checked)}
+                  className="mt-0.5 h-4 w-4 shrink-0 accent-[var(--accent)]"
+                />
+                <span>
+                  Plastik çatal-bıçak ve peçete istiyorum
+                  <span className="block text-xs text-[var(--foreground-muted)]">
+                    İstemiyorsanız işaretlemeyin, israfı birlikte azaltalım.
+                  </span>
+                </span>
+              </label>
+
               {error ? (
                 <p
                   className="rounded-lg border border-red-500/30 bg-red-950/40 px-3 py-2 text-sm text-[#fecaca]"
@@ -860,10 +1029,14 @@ export function SiparisPageClient({ categories }: { categories: OrderCategory[] 
               <Button
                 type="submit"
                 className="w-full justify-center"
-                disabled={pending || cartLines.length === 0 || !meetsMinimum}
+                disabled={pending || cartLines.length === 0 || !meetsMinimum || !storeStatus.open}
                 aria-busy={pending}
               >
-                {pending ? "Sipariş gönderiliyor…" : "Siparişi onayla"}
+                {pending
+                  ? "Sipariş gönderiliyor…"
+                  : !storeStatus.open
+                    ? "Şu an sipariş alınmıyor"
+                    : `Siparişi onayla · ${formatTry(subtotal)}`}
               </Button>
             </form>
           </div>

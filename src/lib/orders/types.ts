@@ -25,4 +25,8 @@ export type OrderRecord = {
   status: OrderStatus;
   created_at: string;
   updated_at: string;
+  cash_change_for: number | null;
+  wants_cutlery: boolean;
+  eta_at: string | null;
+  cancel_reason: string | null;
 };

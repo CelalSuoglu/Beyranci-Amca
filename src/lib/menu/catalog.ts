@@ -29,6 +29,7 @@ export type ProductRow = {
   requires_garlic: boolean;
   /** Kalori (kcal); 20261116 migration'ından önce bu kolon yoktur */
   calories?: number | null;
+  image_url?: string | null;
 };
 
 export type CategoryRow = {
@@ -160,6 +161,7 @@ export function buildCatalog(categories: CategoryRow[], products: ProductRow[]):
         requiresGarlic: p.requires_garlic,
         requiresSpice: spiceLevels !== null,
         calories: p.calories ?? undefined,
+        imageUrl: p.image_url ?? undefined,
       });
     }
   }

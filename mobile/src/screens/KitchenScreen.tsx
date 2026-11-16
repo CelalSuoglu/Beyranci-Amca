@@ -18,11 +18,15 @@ import { useKeepAwake } from "expo-keep-awake";
 import type { RealtimeChannel, Session } from "@supabase/supabase-js";
 import { supabase } from "../lib/supabase";
 import {
+  ETA_OPTIONS,
+  formatTry,
   normalizeOrder,
+  startOfTodayTR,
   type OrderRecord,
   type OrderStatus,
 } from "../lib/orders";
 import { initAlarm, playAlarm, releaseAlarm } from "../lib/alarm";
+import { useStore } from "../lib/useStore";
 import { apiFetch } from "../lib/api";
 import { registerForPush } from "../lib/notifications";
 import { OrderCard } from "../components/OrderCard";
@@ -236,43 +240,62 @@ export function KitchenScreen({ session }: { session: Session }) {
   }, [banner]);
 
   const updateStatus = useCallback(
-    async (orderId: string, status: OrderStatus) => {
+    async (orderId: string, status: OrderStatus, extra?: { etaMinutes?: number; cancelReason?: string }) => {
       setUpdatingId(orderId);
       setError(null);
       // Sunucu: yetki + geçiş kuralı kontrolü ve müşteriye bildirim
-      const res = await apiFetch<{ ok: boolean }>(`/api/orders/${orderId}/status`, {
-        method: "PATCH",
-        body: JSON.stringify({ status }),
-      });
+      const res = await apiFetch<{ ok: boolean; etaAt?: string | null; cancelReason?: string | null }>(
+        `/api/orders/${orderId}/status`,
+        { method: "PATCH", body: JSON.stringify({ status, ...extra }) },
+      );
       if (!res.ok) {
         setError(res.error);
       } else {
-        setOrders((prev) => prev.map((o) => (o.id === orderId ? { ...o, status } : o)));
+        setOrders((prev) =>
+          prev.map((o) =>
+            o.id === orderId
+              ? { ...o, status, eta_at: res.data.etaAt ?? o.eta_at, cancel_reason: res.data.cancelReason ?? o.cancel_reason }
+              : o,
+          ),
+        );
       }
       setUpdatingId(null);
     },
     [],
   );
 
+  const store = useStore();
+  const [storeBusy, setStoreBusy] = useState(false);
+  const defaultEta: number =
+    ETA_OPTIONS.find((m) => m >= store.settings.eta_max) ?? ETA_OPTIONS[ETA_OPTIONS.length - 1];
+
+  const toggleOrders = useCallback(() => {
+    const next = !store.settings.orders_enabled;
+    const run = async () => {
+      setStoreBusy(true);
+      const res = await apiFetch<{ ok: boolean }>("/api/store", {
+        method: "PATCH",
+        body: JSON.stringify({ orders_enabled: next }),
+      });
+      if (!res.ok) setError(res.error);
+      await store.reload();
+      setStoreBusy(false);
+    };
+    if (next) {
+      void run();
+      return;
+    }
+    Alert.alert("Siparişleri durdur", "Online siparişler siz tekrar açana kadar durdurulsun mu?", [
+      { text: "Vazgeç", style: "cancel" },
+      { text: "Durdur", style: "destructive", onPress: () => void run() },
+    ]);
+  }, [store]);
+
   const onChangeStatus = useCallback(
-    (order: OrderRecord, status: OrderStatus) => {
+    (order: OrderRecord, status: OrderStatus, extra?: { etaMinutes?: number; cancelReason?: string }) => {
       if (updatingId) return;
-      if (status === "cancelled") {
-        Alert.alert(
-          "Siparişi iptal et",
-          `${order.order_number} numaralı sipariş iptal edilsin mi?`,
-          [
-            { text: "Vazgeç", style: "cancel" },
-            {
-              text: "İptal et",
-              style: "destructive",
-              onPress: () => void updateStatus(order.id, status),
-            },
-          ],
-        );
-        return;
-      }
-      void updateStatus(order.id, status);
+      // İptal nedeni kartta seçilir (müşteriye gösterilir)
+      void updateStatus(order.id, status, extra);
     },
     [updatingId, updateStatus],
   );
@@ -283,6 +306,16 @@ export function KitchenScreen({ session }: { session: Session }) {
     setRefreshing(false);
   }, [loadOrders]);
 
+
+  const summary = useMemo(() => {
+    const since = startOfTodayTR(now);
+    const today = orders.filter((o) => new Date(o.created_at).getTime() >= since && o.status !== "cancelled");
+    return {
+      waiting: orders.filter((o) => o.status === "new").length,
+      count: today.length,
+      revenue: today.reduce((sum, o) => sum + o.total, 0),
+    };
+  }, [orders, now]);
 
   const counts = useMemo(() => {
     const c: Record<FilterKey, number> = {
@@ -351,6 +384,36 @@ export function KitchenScreen({ session }: { session: Session }) {
         <View style={styles.topButtons}>
           <SmallButton label="Ses test et" onPress={() => void playAlarm()} />
         </View>
+      </View>
+
+      <View style={styles.summaryRow}>
+        <SummaryBox label="Bekleyen" value={String(summary.waiting)} warn={summary.waiting > 0} />
+        <SummaryBox label="Bugün" value={String(summary.count)} />
+        <SummaryBox label="Ciro" value={formatTry(summary.revenue)} />
+      </View>
+
+      <View
+        style={[
+          styles.storeBox,
+          store.status.open
+            ? { borderColor: "rgba(16,185,129,0.35)", backgroundColor: "rgba(6,78,59,0.3)" }
+            : { borderColor: "rgba(239,68,68,0.45)", backgroundColor: colors.dangerBg },
+        ]}
+      >
+        <View style={{ flex: 1 }}>
+          <Text style={{ color: colors.foreground, fontWeight: "700" }}>
+            {store.settings.orders_enabled
+              ? store.status.open
+                ? "Online siparişler açık"
+                : "Saat dışı — sipariş alınmıyor"
+              : "Online siparişler DURDURULDU"}
+          </Text>
+          <Text style={{ color: colors.muted, fontSize: 12, marginTop: 2 }}>{store.status.message}</Text>
+        </View>
+        <SmallButton
+          label={storeBusy ? "…" : store.settings.orders_enabled ? "Durdur" : "Aç"}
+          onPress={toggleOrders}
+        />
       </View>
 
       <TextInput
@@ -432,6 +495,7 @@ export function KitchenScreen({ session }: { session: Session }) {
                 highlighted={highlightIds.has(item.id)}
                 busy={updatingId === item.id}
                 now={now}
+                defaultEta={defaultEta}
                 onChangeStatus={onChangeStatus}
               />
             </View>
@@ -439,6 +503,15 @@ export function KitchenScreen({ session }: { session: Session }) {
         />
       )}
     </SafeAreaView>
+  );
+}
+
+function SummaryBox({ label, value, warn }: { label: string; value: string; warn?: boolean }) {
+  return (
+    <View style={styles.summaryBox}>
+      <Text style={styles.summaryLabel}>{label}</Text>
+      <Text style={[styles.summaryValue, warn && { color: "#fed7aa" }]}>{value}</Text>
+    </View>
   );
 }
 
@@ -487,6 +560,11 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   smallBtnText: { color: colors.foreground, fontWeight: "600", fontSize: 13 },
+  summaryRow: { flexDirection: "row", gap: 8 },
+  summaryBox: { flex: 1, backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1, borderRadius: 12, padding: 10 },
+  summaryLabel: { color: colors.muted, fontSize: 11, fontWeight: "700", letterSpacing: 1 },
+  summaryValue: { color: colors.foreground, fontSize: 18, fontWeight: "700", marginTop: 2 },
+  storeBox: { flexDirection: "row", alignItems: "center", gap: 10, borderWidth: 1, borderRadius: 12, padding: 12 },
   search: {
     borderWidth: 1,
     borderColor: colors.borderStrong,

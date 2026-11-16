@@ -10,6 +10,9 @@ Sıra önemli. **Önce veritabanı, sonra web, sonra mobil.**
    - `mutfak@beyranciamca.com` hesabı otomatik **personel** olur.
    - Ardından **`supabase/migrations/20261116_menu_update.sql`** dosyasını da aynı şekilde çalıştır:
      menüyü basılı menüye (Kasım 2026) günceller, kalori kolonunu ekler, listede olmayan ürünleri siler.
+   - Son olarak **`supabase/migrations/20261117_store_settings.sql`**: sipariş açık/kapalı, çalışma saatleri,
+     tahmini süre, duyuru; para üstü, servis tercihi, teslim saati, iptal nedeni; ürün görselleri.
+   - ✅ 16 Kasım 2026: üç dosya da canlı veritabanında çalıştırıldı.
 2. **Authentication → URL Configuration**
    - Site URL: `https://beyranciamca.com`
    - Redirect URLs: `https://beyranciamca.com/auth/callback` ve `http://localhost:3000/auth/callback`
@@ -83,12 +86,23 @@ cihaz bildirim anahtarı. Hiçbiri reklam veya takip için kullanılmıyor; heps
 - [ ] Üye ol → doğrulama e-postası geliyor → giriş
 - [ ] Şifremi unuttum → e-posta → yeni şifre → giriş
 - [ ] Profil ve adres kaydet → sipariş formunda otomatik doluyor
+- [ ] Sayfayı yenile → sepet duruyor
+- [ ] Kapıda nakit + "2000" yaz → mutfakta para üstü görünüyor; toplamdan az tutar reddediliyor
+- [ ] Geçmiş sipariş → "Tekrar sipariş ver" → ürünler sepette, fiyatlar güncel
 - [ ] Sipariş ver → Siparişlerim'de görünüyor, durum canlı değişiyor, bildirim geliyor
 - [ ] "Siparişi onayla"ya iki kez hızlı bas → tek sipariş oluşuyor
 - [ ] 15 km dışı adres ve 1.250 TL altı sepet reddediliyor
 - [ ] Hesabı sil → giriş yapılamıyor
 
+**Paket sipariş ayarları**
+- [ ] /yonetim/ayarlar → saatleri değiştir → sipariş sayfasındaki "Son sipariş" saati değişiyor
+- [ ] Mutfak panelinde "Siparişleri durdur" → sipariş sayfası anında "Şu an sipariş alınmıyor" gösteriyor, sipariş gönderilemiyor
+- [ ] Duyuru yaz → sipariş sayfasının üstünde görünüyor
+
 **Personel**
+- [ ] Yeni siparişte süre seç (ör. 45 dk) → "Kabul edildi" → müşteri takip ekranında teslim saati görünüyor
+- [ ] İptal → neden seç → müşteri ekranında neden görünüyor
+- [ ] "Fiş yazdır" → 80 mm fiş açılıyor (para üstü, çatal-bıçak, not, adres)
 - [ ] Mutfak paneline giriş → yeni sipariş sesli düşüyor, telefon kilitliyken bildirim geliyor
 - [ ] Bildirime dokununca panel açılıyor
 - [ ] Durumları sırayla değiştir → müşteri ekranına yansıyor

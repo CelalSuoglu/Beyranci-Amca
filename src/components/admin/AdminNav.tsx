@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 const ITEMS = [
   { href: "/yonetim", label: "Ürünler" },
   { href: "/yonetim/kategoriler", label: "Kategoriler" },
+  { href: "/yonetim/ayarlar", label: "Sipariş ayarları" },
   { href: "/yonetim/kullanicilar", label: "Kullanıcılar ve yetkiler" },
 ];
 

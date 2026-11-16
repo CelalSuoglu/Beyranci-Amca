@@ -45,3 +45,15 @@ export const STATUS_TRANSITIONS: Partial<
   ready: ["out_for_delivery", "completed", "cancelled"],
   out_for_delivery: ["completed", "cancelled"],
 };
+
+/** Personelin onaylarken seçtiği tahmini teslim süreleri (dk) */
+export const ETA_OPTIONS = [20, 30, 45, 60, 75] as const;
+
+/** Hazır iptal nedenleri (müşteriye gösterilir) */
+export const CANCEL_REASONS = [
+  "Ürün tükendi",
+  "Adres teslimat alanımız dışında",
+  "Müşteriye ulaşılamadı",
+  "Yoğunluk nedeniyle hazırlanamıyor",
+  "Müşteri iptal istedi",
+] as const;

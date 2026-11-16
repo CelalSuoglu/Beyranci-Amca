@@ -1,5 +1,5 @@
 import { StyleSheet, Text, View } from "react-native";
-import { CUSTOMER_STEPS, ORDER_STATUS_LABELS, formatOrderTime, type OrderStatus } from "../lib/orders";
+import { CUSTOMER_STEPS, ORDER_STATUS_LABELS, formatClockTR, formatOrderTime, type OrderStatus } from "../lib/orders";
 import { colors } from "../theme";
 
 export type ProgressEvent = { to_status: OrderStatus; created_at: string };
@@ -20,18 +20,41 @@ export function StatusBadge({ status }: { status: OrderStatus }) {
   );
 }
 
-export function OrderProgress({ status, events }: { status: OrderStatus; events: ProgressEvent[] }) {
+export function OrderProgress({
+  status,
+  events,
+  etaAt,
+  cancelReason,
+}: {
+  status: OrderStatus;
+  events: ProgressEvent[];
+  etaAt?: string | null;
+  cancelReason?: string | null;
+}) {
   if (status === "cancelled") {
     return (
       <Text style={{ color: colors.danger, lineHeight: 20 }}>
-        Bu sipariş iptal edildi. Sorunuz varsa restoranı arayabilirsiniz.
+        Bu sipariş iptal edildi{cancelReason ? `: ${cancelReason}` : "."} Sorunuz varsa restoranı arayabilirsiniz.
       </Text>
     );
   }
+  const etaBox =
+    etaAt && status !== "completed" ? (
+      <View style={s.eta}>
+        <Text style={{ color: colors.goldPale }}>
+          Tahmini teslimat: <Text style={{ fontWeight: "800", fontSize: 18 }}>{formatClockTR(etaAt)}</Text>
+        </Text>
+      </View>
+    ) : status === "new" ? (
+      <Text style={{ color: colors.muted, marginBottom: 12, lineHeight: 20 }}>
+        Restoran siparişinizi onayladığında tahmini teslim saati burada görünecek.
+      </Text>
+    ) : null;
   const reached = new Map(events.map((e) => [e.to_status, e.created_at]));
   const current = Math.max(0, CUSTOMER_STEPS.findIndex((st) => st.status === status));
   return (
     <View accessibilityLabel={`Sipariş durumu: ${ORDER_STATUS_LABELS[status]}`}>
+      {etaBox}
       {CUSTOMER_STEPS.map((step, i) => {
         const done = i <= current;
         const at = reached.get(step.status);
@@ -57,6 +80,7 @@ export function OrderProgress({ status, events }: { status: OrderStatus; events:
 }
 
 const s = StyleSheet.create({
+  eta: { borderWidth: 1, borderColor: "rgba(212,175,55,0.4)", backgroundColor: "rgba(212,175,55,0.12)", borderRadius: 12, padding: 12, marginBottom: 14 },
   badge: { borderRadius: 999, paddingHorizontal: 12, paddingVertical: 5, alignSelf: "flex-start" },
   badgeText: { fontSize: 12, fontWeight: "700" },
   step: { flexDirection: "row", gap: 12 },

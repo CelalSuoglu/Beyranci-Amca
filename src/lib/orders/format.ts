@@ -43,3 +43,18 @@ export function formatPhoneDisplay(phone: string): string {
   }
   return phone;
 }
+
+/** ISO → "22:45" (Türkiye saati) */
+export function formatClockTR(iso: string): string {
+  return new Intl.DateTimeFormat("tr-TR", {
+    timeZone: "Europe/Istanbul",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date(iso));
+}
+
+/** Türkiye saatine göre bugünün başlangıcı (UTC Date) */
+export function startOfTodayTR(now: Date = new Date()): Date {
+  const tr = new Date(now.getTime() + 3 * 3600000);
+  return new Date(Date.UTC(tr.getUTCFullYear(), tr.getUTCMonth(), tr.getUTCDate()) - 3 * 3600000);
+}

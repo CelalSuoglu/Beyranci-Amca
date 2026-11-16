@@ -43,6 +43,10 @@ export const createOrderInputSchema = z.object({
     .optional()
     .or(z.literal("")),
   paymentMethod: z.enum(PAYMENT_METHODS),
+  /** Kapıda nakitte: kaç TL üzerinden ödenecek (para üstü hazırlığı) */
+  cashChangeFor: z.number().min(0).max(100000).nullable().optional(),
+  /** Plastik çatal-bıçak ve peçete */
+  wantsCutlery: z.boolean().optional(),
   /** Aynı isteğin tekrar gönderilmesinde ikinci sipariş oluşmasın */
   idempotencyKey: z.string().trim().min(8).max(100).optional(),
   items: z
@@ -75,6 +79,8 @@ export type ValidatedOrder = {
   items: ValidatedOrderLine[];
   subtotal: number;
   total: number;
+  cashChangeFor: number | null;
+  wantsCutlery: boolean;
 };
 
 /**
@@ -198,6 +204,17 @@ export function validateAndPriceOrder(
 
   const note = input.note?.trim() ? input.note.trim() : null;
 
+  let cashChangeFor: number | null = null;
+  if (input.paymentMethod === "cash" && input.cashChangeFor != null && input.cashChangeFor > 0) {
+    if (input.cashChangeFor < total) {
+      return {
+        ok: false,
+        message: `Para üstü için yazdığınız tutar sipariş toplamından (${total.toLocaleString("tr-TR")} TL) az olamaz.`,
+      };
+    }
+    cashChangeFor = Math.round(input.cashChangeFor * 100) / 100;
+  }
+
   return {
     ok: true,
     order: {
@@ -209,6 +226,8 @@ export function validateAndPriceOrder(
       items: lines,
       subtotal,
       total,
+      cashChangeFor,
+      wantsCutlery: input.wantsCutlery === true,
     },
   };
 }

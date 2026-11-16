@@ -5,6 +5,8 @@ import { useAuth } from "../../src/context/AuthContext";
 import { useCart } from "../../src/context/CartContext";
 import { Button, Card, Chip, Input, Message, Muted, Screen, Title } from "../../src/components/ui";
 import { apiFetch, newIdempotencyKey } from "../../src/lib/api";
+import { StoreBanner } from "../../src/components/StoreBanner";
+import { useStore } from "../../src/lib/useStore";
 import { registerForPush } from "../../src/lib/notifications";
 import {
   MAX_DELIVERY_KM,
@@ -27,6 +29,9 @@ export default function CartScreen() {
   const [address, setAddress] = useState("");
   const [note, setNote] = useState("");
   const [payment, setPayment] = useState<"cash" | "card">("cash");
+  const [cashChangeFor, setCashChangeFor] = useState("");
+  const [wantsCutlery, setWantsCutlery] = useState(false);
+  const store = useStore();
   const [saved, setSaved] = useState<SavedAddress[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
@@ -60,7 +65,12 @@ export default function CartScreen() {
   async function submit() {
     if (sending) return;
     setError(null);
+    if (!store.status.open) return setError(store.status.message);
     if (!meetsMin) return setError(`Minimum sipariş tutarı ${formatTry(MIN_ORDER_TOTAL_TL)}.`);
+    const change = cashChangeFor.trim() ? Number(cashChangeFor.replace(/\./g, "").replace(",", ".")) : null;
+    if (payment === "cash" && change !== null && (!Number.isFinite(change) || change < subtotal)) {
+      return setError(`Para üstü için yazdığınız tutar sipariş toplamından (${formatTry(subtotal)}) az olamaz.`);
+    }
     if (name.trim().length < 3) return setError("Ad soyad en az 3 karakter olmalı.");
     if (!normalizeTurkishPhone(phone)) return setError("Geçerli bir cep telefonu girin (05XX XXX XX XX).");
     if (address.trim().length < 10) return setError("Teslimat adresini mahalle, sokak ve ilçe ile yazın.");
@@ -76,6 +86,8 @@ export default function CartScreen() {
         address: address.trim(),
         note: note.trim(),
         paymentMethod: payment,
+        cashChangeFor: payment === "cash" ? change : null,
+        wantsCutlery,
         items: lines.map((l) => ({
           productId: l.productId,
           quantity: l.quantity,
@@ -89,12 +101,14 @@ export default function CartScreen() {
     if (!res.ok) {
       // Ağ hatasında aynı anahtar korunur: tekrar denemede çift sipariş oluşmaz
       setError(res.error);
+      if (res.status === 409) void store.reload();
       return;
     }
 
     idemKey.current = null;
     clear();
     setNote("");
+    setCashChangeFor("");
     if (session) {
       router.push(`/siparis/${res.data.orderId}`);
       // Bildirim iznini bağlam içinde iste: sipariş durumu için
@@ -124,6 +138,7 @@ export default function CartScreen() {
   return (
     <Screen>
       <Title eyebrow="Sepet">Siparişi tamamla</Title>
+      <StoreBanner settings={store.settings} status={store.status} />
 
       <Card>
         {lines.map((l) => (
@@ -185,8 +200,39 @@ export default function CartScreen() {
         ))}
       </View>
 
+      {payment === "cash" ? (
+        <Input
+          label="Kaç TL ile ödeyeceksiniz? (isteğe bağlı)"
+          value={cashChangeFor}
+          onChangeText={(v) => setCashChangeFor(v.replace(/[^0-9.,]/g, ""))}
+          keyboardType="number-pad"
+          placeholder={`Örn. ${Math.max(2000, Math.ceil((subtotal || 1) / 500) * 500)}`}
+          hint="Kurye para üstünü hazırlayıp gelsin. Tam para verecekseniz boş bırakın."
+        />
+      ) : null}
+
+      <Pressable
+        onPress={() => setWantsCutlery((v) => !v)}
+        accessibilityRole="checkbox"
+        accessibilityState={{ checked: wantsCutlery }}
+        style={{ flexDirection: "row", gap: 10, alignItems: "flex-start", marginBottom: 18 }}
+      >
+        <View style={{ width: 22, height: 22, borderRadius: 6, borderWidth: 1, borderColor: wantsCutlery ? colors.gold : colors.borderStrong, backgroundColor: wantsCutlery ? colors.gold : "transparent", alignItems: "center", justifyContent: "center", marginTop: 1 }}>
+          {wantsCutlery ? <Text style={{ color: colors.accentForeground, fontWeight: "800" }}>✓</Text> : null}
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text style={{ color: colors.foreground }}>Plastik çatal-bıçak ve peçete istiyorum</Text>
+          <Text style={{ color: colors.muted, fontSize: 12, marginTop: 2 }}>İstemiyorsanız işaretlemeyin, israfı birlikte azaltalım.</Text>
+        </View>
+      </Pressable>
+
       {error ? <Message>{error}</Message> : null}
-      <Button label={sending ? "Gönderiliyor…" : `Siparişi onayla · ${formatTry(subtotal)}`} onPress={() => void submit()} loading={sending} disabled={!meetsMin} />
+      <Button
+        label={!store.status.open ? "Şu an sipariş alınmıyor" : sending ? "Gönderiliyor…" : `Siparişi onayla · ${formatTry(subtotal)}`}
+        onPress={() => void submit()}
+        loading={sending}
+        disabled={!meetsMin || !store.status.open}
+      />
     </Screen>
   );
 }

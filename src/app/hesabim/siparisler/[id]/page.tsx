@@ -2,9 +2,10 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Card } from "@/components/account/ui";
 import { LiveOrderStatus } from "@/components/account/LiveOrder";
+import { ReorderButton } from "@/components/account/ReorderButton";
 import { OrderItems, type OrderItemView, type ProgressEvent } from "@/components/account/OrderProgress";
 import { PAYMENT_METHOD_LABELS, type OrderStatus, type PaymentMethod } from "@/lib/orders/constants";
-import { formatOrderTime } from "@/lib/orders/format";
+import { formatOrderTime, formatTry } from "@/lib/orders/format";
 import { site } from "@/lib/site";
 import { createClient } from "@/lib/supabase/server";
 
@@ -20,7 +21,7 @@ export default async function SiparisDetayPage({ params }: { params: Promise<{ i
 
   const { data: order } = await supabase
     .from("orders")
-    .select("id, order_number, status, items, total, created_at, address, note, payment_method, user_id")
+    .select("id, order_number, status, items, total, created_at, address, note, payment_method, user_id, eta_at, cancel_reason, cash_change_for, wants_cutlery")
     .eq("id", id)
     .eq("user_id", user.id)
     .maybeSingle();
@@ -46,6 +47,8 @@ export default async function SiparisDetayPage({ params }: { params: Promise<{ i
               orderId={order.id}
               initialStatus={order.status as OrderStatus}
               initialEvents={(events ?? []) as ProgressEvent[]}
+              initialEtaAt={(order.eta_at as string | null) ?? null}
+              initialCancelReason={(order.cancel_reason as string | null) ?? null}
             />
           </div>
         </Card>
@@ -61,7 +64,14 @@ export default async function SiparisDetayPage({ params }: { params: Promise<{ i
             </div>
             <div>
               <dt className="text-[var(--foreground-muted)]">Ödeme</dt>
-              <dd>{PAYMENT_METHOD_LABELS[order.payment_method as PaymentMethod] ?? "Online ödeme"}</dd>
+              <dd>
+                {PAYMENT_METHOD_LABELS[order.payment_method as PaymentMethod] ?? "Online ödeme"}
+                {order.cash_change_for ? ` · ${formatTry(Number(order.cash_change_for))} üzerinden` : ""}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-[var(--foreground-muted)]">Servis</dt>
+              <dd>{order.wants_cutlery ? "Çatal-bıçak ve peçete istendi" : "Çatal-bıçak istenmedi"}</dd>
             </div>
             {order.note ? (
               <div>
@@ -70,6 +80,9 @@ export default async function SiparisDetayPage({ params }: { params: Promise<{ i
               </div>
             ) : null}
           </dl>
+          <div className="mt-5">
+            <ReorderButton items={(order.items ?? []) as { productId: string; quantity: number }[]} />
+          </div>
           {site.phoneTel ? (
             <a href={`tel:${site.phoneTel}`} className="mt-5 inline-flex text-sm font-medium text-[#fdba74] hover:underline">
               Restoranı ara: {site.phoneDisplay}

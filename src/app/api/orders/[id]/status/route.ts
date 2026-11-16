@@ -7,7 +7,13 @@ import { notifyCustomerStatus } from "@/lib/push";
 
 export const runtime = "nodejs";
 
-const bodySchema = z.object({ status: z.enum(ORDER_STATUSES) });
+const bodySchema = z.object({
+  status: z.enum(ORDER_STATUSES),
+  /** Onaylarken: kaç dakikada teslim edilecek */
+  etaMinutes: z.number().int().min(5).max(240).optional(),
+  /** İptalde müşteriye gösterilecek neden */
+  cancelReason: z.string().trim().min(2).max(200).optional(),
+});
 
 export async function PATCH(
   request: Request,
@@ -50,11 +56,19 @@ export async function PATCH(
     );
   }
 
+  const patch: Record<string, unknown> = { status: next };
+  if (parsed.data.etaMinutes && next !== "cancelled" && next !== "completed") {
+    patch.eta_at = new Date(Date.now() + parsed.data.etaMinutes * 60000).toISOString();
+  }
+  if (next === "cancelled") {
+    patch.cancel_reason = parsed.data.cancelReason ?? null;
+  }
+
   const { data, error } = await auth.client
     .from("orders")
-    .update({ status: next })
+    .update(patch)
     .eq("id", id)
-    .select("id, order_number, status, user_id, updated_at")
+    .select("id, order_number, status, user_id, updated_at, eta_at, cancel_reason")
     .single();
 
   if (error || !data) {
@@ -66,7 +80,15 @@ export async function PATCH(
     order_number: data.order_number,
     user_id: data.user_id,
     status: data.status as OrderStatus,
+    eta_at: (data.eta_at as string | null) ?? null,
+    cancel_reason: (data.cancel_reason as string | null) ?? null,
   });
 
-  return NextResponse.json({ ok: true, status: data.status, updatedAt: data.updated_at });
+  return NextResponse.json({
+    ok: true,
+    status: data.status,
+    updatedAt: data.updated_at,
+    etaAt: data.eta_at ?? null,
+    cancelReason: data.cancel_reason ?? null,
+  });
 }

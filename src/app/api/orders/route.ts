@@ -5,6 +5,8 @@ import { createOrderInputSchema, validateAndPriceOrder } from "@/lib/orders/sche
 import { getCatalog } from "@/lib/menu/catalog";
 import { getRequestAuth } from "@/lib/auth/request";
 import { notifyCustomerOrderReceived, notifyStaffNewOrder } from "@/lib/push";
+import { getStoreStatus } from "@/lib/store/hours";
+import { getStoreSettings } from "@/lib/store/server";
 
 export const runtime = "nodejs";
 
@@ -79,6 +81,12 @@ export async function POST(request: Request) {
     if (existing) return okResponse(existing as InsertedOrder, 200);
   }
 
+  // Çalışma saatleri ve "siparişleri durdur" sunucuda da denetlenir
+  const store = getStoreStatus(await getStoreSettings());
+  if (!store.open) {
+    return NextResponse.json({ error: store.message, storeClosed: true }, { status: 409 });
+  }
+
   const catalog = await getCatalog();
   const byId = new Map(catalog.orderable.map((p) => [p.id, p]));
   const priced = validateAndPriceOrder(parsed.data, (id) => byId.get(id));
@@ -107,6 +115,8 @@ export async function POST(request: Request) {
       user_id: userId,
       idempotency_key: idempotencyKey,
       payment_status: "unpaid",
+      cash_change_for: order.cashChangeFor,
+      wants_cutlery: order.wantsCutlery,
     })
     .select(RETURN_FIELDS)
     .single();

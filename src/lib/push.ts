@@ -116,15 +116,29 @@ const CUSTOMER_STATUS_TEXT: Partial<Record<OrderStatus, string>> = {
   cancelled: "Siparişiniz iptal edildi. Sorunuz varsa bizi arayın.",
 };
 
+/** "2026-11-16T19:45:00Z" → "22:45" (Türkiye saati) */
+function trClock(iso: string): string {
+  const d = new Date(new Date(iso).getTime() + 3 * 3600000);
+  return `${String(d.getUTCHours()).padStart(2, "0")}:${String(d.getUTCMinutes()).padStart(2, "0")}`;
+}
+
 export async function notifyCustomerStatus(order: {
   id: string;
   order_number: string;
   user_id: string | null;
   status: OrderStatus;
+  eta_at?: string | null;
+  cancel_reason?: string | null;
 }): Promise<void> {
   if (!order.user_id) return;
-  const body = CUSTOMER_STATUS_TEXT[order.status];
+  let body = CUSTOMER_STATUS_TEXT[order.status];
   if (!body) return;
+  if (order.eta_at && (order.status === "accepted" || order.status === "preparing")) {
+    body = `${body} Tahmini teslimat ${trClock(order.eta_at)}.`;
+  }
+  if (order.status === "cancelled" && order.cancel_reason) {
+    body = `Siparişiniz iptal edildi: ${order.cancel_reason}`;
+  }
   try {
     const tokens = await tokensForUsers([order.user_id]);
     await sendToTokens(tokens, {

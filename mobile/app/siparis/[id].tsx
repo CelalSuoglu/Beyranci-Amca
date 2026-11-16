@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
 import { AppState, Linking, Text, View } from "react-native";
-import { useLocalSearchParams } from "expo-router";
-import { Card, Loading, Message, Screen } from "../../src/components/ui";
+import { router, useLocalSearchParams } from "expo-router";
+import { Button, Card, Loading, Message, Screen } from "../../src/components/ui";
+import { useCart } from "../../src/context/CartContext";
 import { OrderProgress, StatusBadge, type ProgressEvent } from "../../src/components/OrderProgress";
 import {
   PAYMENT_METHOD_LABELS,
@@ -24,6 +25,10 @@ type Detail = {
   address: string;
   note: string | null;
   payment_method: PaymentMethod;
+  eta_at: string | null;
+  cancel_reason: string | null;
+  cash_change_for: number | null;
+  wants_cutlery: boolean;
 };
 
 const RESTAURANT_PHONE = "tel:+905340600707";
@@ -33,11 +38,12 @@ export default function OrderDetailScreen() {
   const [order, setOrder] = useState<Detail | null>(null);
   const [events, setEvents] = useState<ProgressEvent[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const { add, productById } = useCart();
 
   const load = useCallback(async () => {
     if (!id) return;
     const [o, e] = await Promise.all([
-      supabase.from("orders").select("id, order_number, status, items, total, created_at, address, note, payment_method").eq("id", id).maybeSingle(),
+      supabase.from("orders").select("id, order_number, status, items, total, created_at, address, note, payment_method, eta_at, cancel_reason, cash_change_for, wants_cutlery").eq("id", id).maybeSingle(),
       supabase.from("order_events").select("to_status, created_at").eq("order_id", id).order("created_at"),
     ]);
     if (o.error || !o.data) {
@@ -80,7 +86,7 @@ export default function OrderDetailScreen() {
         <Text style={{ color: colors.muted, marginTop: 2, marginBottom: 12 }}>{formatOrderTime(order.created_at)}</Text>
         <StatusBadge status={order.status} />
         <View style={{ marginTop: 16 }}>
-          <OrderProgress status={order.status} events={events} />
+          <OrderProgress status={order.status} events={events} etaAt={order.eta_at} cancelReason={order.cancel_reason} />
         </View>
       </Card>
       <Card>
@@ -101,13 +107,36 @@ export default function OrderDetailScreen() {
         <Text style={{ color: colors.muted, fontSize: 13 }}>Teslimat adresi</Text>
         <Text style={{ color: colors.foreground, marginBottom: 10 }}>{order.address}</Text>
         <Text style={{ color: colors.muted, fontSize: 13 }}>Ödeme</Text>
-        <Text style={{ color: colors.foreground }}>{PAYMENT_METHOD_LABELS[order.payment_method] ?? order.payment_method}</Text>
+        <Text style={{ color: colors.foreground }}>
+          {PAYMENT_METHOD_LABELS[order.payment_method] ?? order.payment_method}
+          {order.cash_change_for ? ` · ${formatTry(Number(order.cash_change_for))} üzerinden` : ""}
+        </Text>
+        <Text style={{ color: colors.muted, fontSize: 13, marginTop: 10 }}>Servis</Text>
+        <Text style={{ color: colors.foreground }}>{order.wants_cutlery ? "Çatal-bıçak ve peçete istendi" : "Çatal-bıçak istenmedi"}</Text>
         {order.note ? (
           <>
             <Text style={{ color: colors.muted, fontSize: 13, marginTop: 10 }}>Not</Text>
             <Text style={{ color: colors.foreground }}>{order.note}</Text>
           </>
         ) : null}
+        <Button
+          label="Tekrar sipariş ver"
+          variant="outline"
+          style={{ marginTop: 16 }}
+          onPress={() => {
+            let missing = 0;
+            for (const it of order.items) {
+              // Menüden kalkmış ürünler eklenmez; fiyatlar güncel menüden
+              if (!productById(it.productId)) {
+                missing += 1;
+                continue;
+              }
+              add(it.productId, it.quantity, it.spiceLevel ?? null, it.garlicLevel ?? null);
+            }
+            router.push("/sepet");
+            if (missing) setError(`${missing} ürün artık menüde olmadığı için sepete eklenmedi.`);
+          }}
+        />
         <Text onPress={() => void Linking.openURL(RESTAURANT_PHONE)} style={{ color: colors.accentSoft, fontWeight: "600", marginTop: 14 }}>
           Restoranı ara: 0534 060 07 07
         </Text>

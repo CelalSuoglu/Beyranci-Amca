@@ -23,6 +23,7 @@ type Draft = {
   description: string;
   price: string;
   calories: string;
+  image_url: string;
   is_active: boolean;
   is_orderable: boolean;
   spice: SpicePreset;
@@ -36,6 +37,7 @@ const emptyDraft = (categoryId: string): Draft => ({
   description: "",
   price: "",
   calories: "",
+  image_url: "",
   is_active: true,
   is_orderable: true,
   spice: "none",
@@ -96,6 +98,7 @@ export function ProductsAdmin() {
       description: p.description ?? "",
       price: String(p.price).replace(".", ","),
       calories: p.calories ? String(p.calories) : "",
+      image_url: p.image_url ?? "",
       is_active: p.is_active,
       is_orderable: p.is_orderable,
       spice: spicePresetOf(p.spice_levels),
@@ -125,6 +128,10 @@ export function ProductsAdmin() {
     if (name.length < 2) return setError("Ürün adı en az 2 karakter olmalı.");
     if (price === null) return setError("Geçerli bir fiyat girin (ör. 450 veya 450,50).");
     if (!draft.category_id) return setError("Kategori seçin.");
+    const img = draft.image_url.trim();
+    if (img && !/^(\/[\w\-./]+|https:\/\/\S+)$/.test(img)) {
+      return setError("Görsel adresi /images/... ile ya da https:// ile başlamalı.");
+    }
     const calTrim = draft.calories.trim();
     const calories = calTrim ? Number(calTrim) : null;
     if (calories !== null && (!Number.isInteger(calories) || calories < 0 || calories > 10000)) {
@@ -140,6 +147,7 @@ export function ProductsAdmin() {
       description: draft.description.trim() || null,
       price,
       calories,
+      image_url: img || null,
       is_active: draft.is_active,
       is_orderable: draft.is_orderable,
       spice_levels: SPICE_PRESETS[draft.spice] ? [...SPICE_PRESETS[draft.spice]!] : null,
@@ -242,6 +250,10 @@ export function ProductsAdmin() {
                 <option value="simple">Acılı / Acısız</option>
                 <option value="full">Acılı / Az acılı / Acısız</option>
               </select>
+            </label>
+            <label className="text-sm font-medium sm:col-span-2">
+              Görsel adresi (isteğe bağlı)
+              <input value={draft.image_url} onChange={(e) => setDraft({ ...draft, image_url: e.target.value })} className={fieldClass} placeholder="/images/menu/beyran.jpg" />
             </label>
             <label className="text-sm font-medium sm:col-span-2">
               Açıklama (isteğe bağlı)

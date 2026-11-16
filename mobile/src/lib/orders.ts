@@ -80,6 +80,10 @@ export type OrderRecord = {
   status: OrderStatus;
   created_at: string;
   updated_at: string;
+  cash_change_for: number | null;
+  wants_cutlery: boolean;
+  eta_at: string | null;
+  cancel_reason: string | null;
 };
 
 export function normalizeOrder(row: Record<string, unknown>): OrderRecord {
@@ -97,7 +101,33 @@ export function normalizeOrder(row: Record<string, unknown>): OrderRecord {
     status: row.status as OrderStatus,
     created_at: String(row.created_at),
     updated_at: String(row.updated_at),
+    cash_change_for: row.cash_change_for == null ? null : Number(row.cash_change_for),
+    wants_cutlery: row.wants_cutlery === true,
+    eta_at: (row.eta_at as string | null) ?? null,
+    cancel_reason: (row.cancel_reason as string | null) ?? null,
   };
+}
+
+export const ETA_OPTIONS = [20, 30, 45, 60, 75] as const;
+
+export const CANCEL_REASONS = [
+  "Ürün tükendi",
+  "Adres teslimat alanımız dışında",
+  "Müşteriye ulaşılamadı",
+  "Yoğunluk nedeniyle hazırlanamıyor",
+  "Müşteri iptal istedi",
+] as const;
+
+/** ISO → "22:45" (Türkiye saati) */
+export function formatClockTR(iso: string): string {
+  const d = new Date(new Date(iso).getTime() + 3 * 3600000);
+  return `${String(d.getUTCHours()).padStart(2, "0")}:${String(d.getUTCMinutes()).padStart(2, "0")}`;
+}
+
+/** Türkiye saatine göre bugünün başlangıcı */
+export function startOfTodayTR(now: number = Date.now()): number {
+  const tr = new Date(now + 3 * 3600000);
+  return Date.UTC(tr.getUTCFullYear(), tr.getUTCMonth(), tr.getUTCDate()) - 3 * 3600000;
 }
 
 export function formatModifiers(item: OrderItemRecord): string | null {

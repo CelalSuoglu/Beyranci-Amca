@@ -3,12 +3,25 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import {
+  CANCEL_REASONS,
+  ETA_OPTIONS,
   ORDER_STATUS_LABELS,
   PAYMENT_METHOD_LABELS,
   STATUS_TRANSITIONS,
   type OrderStatus,
 } from "@/lib/orders/constants";
-import { formatOrderTime, formatPhoneDisplay, formatTry } from "@/lib/orders/format";
+import {
+  formatClockTR,
+  formatOrderTime,
+  formatPhoneDisplay,
+  formatTry,
+  startOfTodayTR,
+} from "@/lib/orders/format";
+import {
+  getStoreStatus,
+  normalizeStoreSettings,
+  type StoreSettings,
+} from "@/lib/store/hours";
 import type { OrderRecord } from "@/lib/orders/types";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/utils";
@@ -19,6 +32,7 @@ import {
 } from "@/lib/orders/kitchen-alert";
 
 type FilterKey =
+  | "active"
   | "all"
   | "new"
   | "preparing"
@@ -27,6 +41,7 @@ type FilterKey =
   | "cancelled";
 
 const FILTERS: { key: FilterKey; label: string }[] = [
+  { key: "active", label: "Aktif" },
   { key: "all", label: "Tümü" },
   { key: "new", label: "Yeni" },
   { key: "preparing", label: "Hazırlanıyor" },
@@ -50,7 +65,17 @@ function normalizeOrder(row: Record<string, unknown>): OrderRecord {
     status: row.status as OrderStatus,
     created_at: String(row.created_at),
     updated_at: String(row.updated_at),
+    cash_change_for: row.cash_change_for == null ? null : Number(row.cash_change_for),
+    wants_cutlery: row.wants_cutlery === true,
+    eta_at: (row.eta_at as string | null) ?? null,
+    cancel_reason: (row.cancel_reason as string | null) ?? null,
   };
+}
+
+const ACTIVE_STATUSES: OrderStatus[] = ["new", "accepted", "preparing", "ready", "out_for_delivery"];
+
+function minutesSince(iso: string, now: number): number {
+  return Math.max(0, Math.floor((now - new Date(iso).getTime()) / 60000));
 }
 
 export function KitchenDashboard() {
@@ -60,7 +85,12 @@ export function KitchenDashboard() {
   const [connection, setConnection] = useState<
     "connecting" | "live" | "disconnected"
   >("connecting");
-  const [filter, setFilter] = useState<FilterKey>("all");
+  const [filter, setFilter] = useState<FilterKey>("active");
+  const [etaPick, setEtaPick] = useState<Record<string, number>>({});
+  const [cancelOpen, setCancelOpen] = useState<string | null>(null);
+  const [store, setStore] = useState<StoreSettings | null>(null);
+  const [storeBusy, setStoreBusy] = useState(false);
+  const [now, setNow] = useState(() => Date.now());
   const [query, setQuery] = useState("");
   const [banner, setBanner] = useState<string | null>(null);
   const [highlightIds, setHighlightIds] = useState<Set<string>>(new Set());
@@ -138,6 +168,57 @@ export function KitchenDashboard() {
   }, [loadOrders]);
 
   useEffect(() => subscribeKitchenAudioArmed(setAudioArmed), []);
+
+  /** Bekleme süreleri için dakikada bir yenile */
+  useEffect(() => {
+    const t = window.setInterval(() => setNow(Date.now()), 30000);
+    return () => window.clearInterval(t);
+  }, []);
+
+  /** Mağaza ayarları (sipariş açık/durduruldu) — canlı */
+  useEffect(() => {
+    const supabase = createClient();
+    const load = async () => {
+      const { data } = await supabase.from("store_settings").select("*").eq("id", 1).maybeSingle();
+      if (data) setStore(normalizeStoreSettings(data as Record<string, unknown>));
+    };
+    void load();
+    const ch = supabase
+      .channel("kitchen-store-settings")
+      .on("postgres_changes", { event: "*", schema: "public", table: "store_settings" }, () => void load())
+      .subscribe();
+    const poll = window.setInterval(() => void load(), 60000);
+    return () => {
+      window.clearInterval(poll);
+      void supabase.removeChannel(ch);
+    };
+  }, []);
+
+  async function toggleOrders() {
+    if (!store || storeBusy) return;
+    const next = !store.orders_enabled;
+    if (
+      !next &&
+      !window.confirm("Online siparişler durdurulsun mu? Müşteriler siz tekrar açana kadar sipariş veremez.")
+    ) {
+      return;
+    }
+    setStoreBusy(true);
+    try {
+      const res = await fetch("/api/store", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orders_enabled: next }),
+      });
+      const body = (await res.json().catch(() => null)) as { error?: string; settings?: StoreSettings } | null;
+      if (!res.ok || !body?.settings) setError(body?.error ?? "Sipariş durumu değiştirilemedi.");
+      else setStore(body.settings);
+    } catch {
+      setError("Sipariş durumu değiştirilemedi.");
+    } finally {
+      setStoreBusy(false);
+    }
+  }
 
   /** Ses kilidini her etkileşimde ve sekme geri gelince yenile */
   useEffect(() => {
@@ -281,7 +362,11 @@ export function KitchenDashboard() {
     return () => window.clearTimeout(t);
   }, [banner]);
 
-  async function updateStatus(orderId: string, status: OrderStatus) {
+  async function updateStatus(
+    orderId: string,
+    status: OrderStatus,
+    extra?: { etaMinutes?: number; cancelReason?: string },
+  ) {
     if (updatingId) return;
     setUpdatingId(orderId);
     setError(null);
@@ -290,16 +375,30 @@ export function KitchenDashboard() {
       const res = await fetch(`/api/orders/${orderId}/status`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status }),
+        body: JSON.stringify({ status, ...extra }),
       });
-      const body = (await res.json().catch(() => null)) as { error?: string } | null;
+      const body = (await res.json().catch(() => null)) as {
+        error?: string;
+        etaAt?: string | null;
+        cancelReason?: string | null;
+      } | null;
 
       if (!res.ok) {
         setError(body?.error ?? "Durum güncellenemedi. Tekrar deneyin.");
       } else {
         setOrders((prev) =>
-          prev.map((o) => (o.id === orderId ? { ...o, status } : o)),
+          prev.map((o) =>
+            o.id === orderId
+              ? {
+                  ...o,
+                  status,
+                  eta_at: body?.etaAt ?? o.eta_at,
+                  cancel_reason: body?.cancelReason ?? o.cancel_reason,
+                }
+              : o,
+          ),
         );
+        setCancelOpen(null);
       }
     } catch {
       setError("Durum güncellenirken bağlantı kesildi.");
@@ -311,6 +410,7 @@ export function KitchenDashboard() {
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     return orders.filter((order) => {
+      if (filter === "active" && !ACTIVE_STATUSES.includes(order.status)) return false;
       if (filter === "new" && order.status !== "new") return false;
       if (filter === "preparing" && order.status !== "preparing") return false;
       if (filter === "ready" && order.status !== "ready") return false;
@@ -326,6 +426,24 @@ export function KitchenDashboard() {
       );
     });
   }, [orders, filter, query]);
+
+  const summary = useMemo(() => {
+    const since = startOfTodayTR(new Date(now)).getTime();
+    const today = orders.filter((o) => new Date(o.created_at).getTime() >= since);
+    const valid = today.filter((o) => o.status !== "cancelled");
+    return {
+      count: valid.length,
+      revenue: valid.reduce((s, o) => s + o.total, 0),
+      active: orders.filter((o) => ACTIVE_STATUSES.includes(o.status)).length,
+      waiting: orders.filter((o) => o.status === "new").length,
+      cancelled: today.length - valid.length,
+    };
+  }, [orders, now]);
+
+  const storeStatus = store ? getStoreStatus(store, new Date(now)) : null;
+  /** Varsayılan süre: ayarlardaki üst sınıra en yakın seçenek */
+  const defaultEta: number =
+    ETA_OPTIONS.find((m) => m >= (store?.eta_max ?? 45)) ?? ETA_OPTIONS[ETA_OPTIONS.length - 1];
 
   return (
     <div className="space-y-6">
@@ -404,6 +522,52 @@ export function KitchenDashboard() {
         </div>
       </div>
 
+      <section aria-label="Bugünün özeti" className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        {[
+          { label: "Bekleyen", value: String(summary.waiting), tone: summary.waiting > 0 ? "text-orange-200" : "" },
+          { label: "Aktif", value: String(summary.active), tone: "" },
+          { label: "Bugün sipariş", value: String(summary.count), tone: "" },
+          { label: "Bugün ciro", value: formatTry(summary.revenue), tone: "text-[#e8c76a]" },
+        ].map((s) => (
+          <div key={s.label} className="rounded-xl border border-white/[0.08] bg-[var(--surface)] px-4 py-3">
+            <p className="text-xs uppercase tracking-[0.14em] text-[var(--foreground-muted)]">{s.label}</p>
+            <p className={cn("mt-1 text-xl font-semibold tabular-nums", s.tone)}>{s.value}</p>
+          </div>
+        ))}
+      </section>
+
+      {store ? (
+        <div
+          className={cn(
+            "flex flex-wrap items-center justify-between gap-3 rounded-xl border px-4 py-3",
+            storeStatus?.open
+              ? "border-emerald-500/30 bg-emerald-950/30"
+              : "border-red-500/40 bg-red-950/40",
+          )}
+          role="status"
+        >
+          <div className="min-w-0">
+            <p className="font-semibold">
+              {store.orders_enabled
+                ? storeStatus?.open
+                  ? "Online siparişler açık"
+                  : "Çalışma saatleri dışında — sipariş alınmıyor"
+                : "Online siparişler DURDURULDU"}
+            </p>
+            <p className="text-sm text-[var(--foreground-muted)]">{storeStatus?.message}</p>
+          </div>
+          <Button
+            type="button"
+            variant={store.orders_enabled ? "outline" : "primary"}
+            className="!min-h-10 !px-4 text-sm"
+            disabled={storeBusy}
+            onClick={() => void toggleOrders()}
+          >
+            {store.orders_enabled ? "Siparişleri durdur" : "Siparişleri aç"}
+          </Button>
+        </div>
+      ) : null}
+
       <div
         className="flex flex-wrap gap-2"
         role="tablist"
@@ -464,7 +628,27 @@ export function KitchenDashboard() {
                       </p>
                       <p className="mt-1 text-sm text-[var(--foreground-muted)]">
                         {formatOrderTime(order.created_at)}
+                        {ACTIVE_STATUSES.includes(order.status) ? (
+                          <span
+                            className={cn(
+                              "ml-2 font-medium",
+                              order.status === "new" && minutesSince(order.created_at, now) >= 5
+                                ? "text-orange-300"
+                                : "",
+                            )}
+                          >
+                            · {minutesSince(order.created_at, now)} dk
+                          </span>
+                        ) : null}
                       </p>
+                      <a
+                        href={`/mutfak/fis/${order.id}`}
+                        target="_blank"
+                        rel="noopener"
+                        className="mt-2 inline-flex text-sm font-medium text-[#fdba74] underline-offset-2 hover:underline"
+                      >
+                        Fiş yazdır
+                      </a>
                     </div>
                     <span
                       className={cn(
@@ -502,8 +686,32 @@ export function KitchenDashboard() {
                     </div>
                     <div>
                       <dt className="text-[var(--foreground-muted)]">Ödeme</dt>
-                      <dd>{PAYMENT_METHOD_LABELS[order.payment_method]}</dd>
+                      <dd>
+                        {PAYMENT_METHOD_LABELS[order.payment_method] ?? "Online ödeme"}
+                        {order.cash_change_for ? (
+                          <span className="ml-2 rounded-md bg-amber-500/15 px-2 py-0.5 text-amber-100">
+                            {formatTry(order.cash_change_for)} üzerinden · para üstü{" "}
+                            {formatTry(order.cash_change_for - order.total)}
+                          </span>
+                        ) : null}
+                      </dd>
                     </div>
+                    <div>
+                      <dt className="text-[var(--foreground-muted)]">Servis</dt>
+                      <dd>{order.wants_cutlery ? "Çatal-bıçak ve peçete İSTİYOR" : "Çatal-bıçak istemiyor"}</dd>
+                    </div>
+                    {order.eta_at && ACTIVE_STATUSES.includes(order.status) ? (
+                      <div>
+                        <dt className="text-[var(--foreground-muted)]">Müşteriye söylenen teslim saati</dt>
+                        <dd className="font-semibold text-[#fde68a]">{formatClockTR(order.eta_at)}</dd>
+                      </div>
+                    ) : null}
+                    {order.status === "cancelled" && order.cancel_reason ? (
+                      <div>
+                        <dt className="text-[var(--foreground-muted)]">İptal nedeni</dt>
+                        <dd className="text-[#fecaca]">{order.cancel_reason}</dd>
+                      </div>
+                    ) : null}
                     {order.note ? (
                       <div>
                         <dt className="text-[var(--foreground-muted)]">Not</dt>
@@ -519,9 +727,9 @@ export function KitchenDashboard() {
                       Ürünler
                     </h3>
                     <ul className="mt-2 space-y-1.5 text-sm">
-                      {order.items.map((item) => (
+                      {order.items.map((item, idx) => (
                         <li
-                          key={`${order.id}-${item.productId}`}
+                          key={`${order.id}-${idx}`}
                           className="flex justify-between gap-3"
                         >
                           <span>
@@ -541,7 +749,61 @@ export function KitchenDashboard() {
                     </p>
                   </div>
 
-                  {transitions.length > 0 ? (
+                  {order.status === "new" ? (
+                    <div className="mt-5">
+                      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#d4af37]/90">
+                        Tahmini teslim süresi
+                      </p>
+                      <div className="mt-2 flex flex-wrap gap-2" role="radiogroup" aria-label="Tahmini süre">
+                        {ETA_OPTIONS.map((m) => {
+                          const picked = (etaPick[order.id] ?? defaultEta) === m;
+                          return (
+                            <button
+                              key={m}
+                              type="button"
+                              role="radio"
+                              aria-checked={picked}
+                              onClick={() => setEtaPick((p) => ({ ...p, [order.id]: m }))}
+                              className={cn(
+                                "min-h-10 rounded-full border px-3 text-sm font-medium",
+                                picked
+                                  ? "border-[#d4af37]/55 bg-[#d4af37]/15 text-[#fde68a]"
+                                  : "border-white/12 text-[var(--foreground-muted)]",
+                              )}
+                            >
+                              {m} dk
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ) : null}
+
+                  {cancelOpen === order.id ? (
+                    <div className="mt-5 rounded-xl border border-red-500/30 bg-red-950/30 p-3">
+                      <p className="text-sm font-semibold text-[#fecaca]">İptal nedeni (müşteriye gösterilir)</p>
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        {CANCEL_REASONS.map((r) => (
+                          <button
+                            key={r}
+                            type="button"
+                            disabled={updatingId === order.id}
+                            onClick={() => void updateStatus(order.id, "cancelled", { cancelReason: r })}
+                            className="min-h-10 rounded-full border border-red-400/40 px-3 text-sm text-[#fecaca] hover:bg-red-900/40 disabled:opacity-50"
+                          >
+                            {r}
+                          </button>
+                        ))}
+                        <button
+                          type="button"
+                          onClick={() => setCancelOpen(null)}
+                          className="min-h-10 rounded-full border border-white/12 px-3 text-sm"
+                        >
+                          Vazgeç
+                        </button>
+                      </div>
+                    </div>
+                  ) : transitions.length > 0 ? (
                     <div className="mt-5 flex flex-wrap gap-2">
                       {transitions.map((status) => (
                         <Button
@@ -550,9 +812,21 @@ export function KitchenDashboard() {
                           variant={status === "cancelled" ? "outline" : "primary"}
                           className="!min-h-10 !px-4 text-sm"
                           disabled={updatingId === order.id}
-                          onClick={() => void updateStatus(order.id, status)}
+                          onClick={() => {
+                            if (status === "cancelled") {
+                              setCancelOpen(order.id);
+                              return;
+                            }
+                            const etaMinutes =
+                              order.status === "new"
+                                ? (etaPick[order.id] ?? defaultEta)
+                                : undefined;
+                            void updateStatus(order.id, status, etaMinutes ? { etaMinutes } : undefined);
+                          }}
                         >
-                          {ORDER_STATUS_LABELS[status]}
+                          {order.status === "new" && status !== "cancelled"
+                            ? `${ORDER_STATUS_LABELS[status]} · ${etaPick[order.id] ?? defaultEta} dk`
+                            : ORDER_STATUS_LABELS[status]}
                         </Button>
                       ))}
                     </div>

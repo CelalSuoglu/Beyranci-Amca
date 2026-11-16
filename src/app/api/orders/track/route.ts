@@ -17,7 +17,7 @@ export async function GET(request: Request) {
   const admin = createAdminClient();
   const { data: order } = await admin
     .from("orders")
-    .select("id, order_number, status, items, total, created_at, updated_at, payment_method")
+    .select("id, order_number, status, items, total, created_at, updated_at, payment_method, eta_at, cancel_reason")
     .eq("tracking_token", token)
     .maybeSingle();
 
