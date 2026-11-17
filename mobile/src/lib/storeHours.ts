@@ -41,7 +41,7 @@ export const DEFAULT_STORE_SETTINGS: StoreSettings = {
   eta_max: 50,
   last_order_minutes: 30,
   // Pazartesi kapalı
-  opening_hours: Array.from({ length: 7 }, (_, i) => ({ open: "08:30", close: "00:00", closed: i === 0 })),
+  opening_hours: Array.from({ length: 7 }, (_, i) => ({ open: "11:00", close: "22:00", closed: i === 0 })),
 };
 
 const DAY = 1440;

@@ -56,12 +56,12 @@ export const site: SiteConfig = {
     label: "Çalışma saatleri",
     weekly: [
       { day: "Pazartesi", hours: "Kapalı" },
-      { day: "Salı", hours: "08:30 – 00:00" },
-      { day: "Çarşamba", hours: "08:30 – 00:00" },
-      { day: "Perşembe", hours: "08:30 – 00:00" },
-      { day: "Cuma", hours: "08:30 – 00:00" },
-      { day: "Cumartesi", hours: "08:30 – 00:00" },
-      { day: "Pazar", hours: "08:30 – 00:00" },
+      { day: "Salı", hours: "11:00 – 22:00" },
+      { day: "Çarşamba", hours: "11:00 – 22:00" },
+      { day: "Perşembe", hours: "11:00 – 22:00" },
+      { day: "Cuma", hours: "11:00 – 22:00" },
+      { day: "Cumartesi", hours: "11:00 – 22:00" },
+      { day: "Pazar", hours: "11:00 – 22:00" },
     ],
   },
   /** Google Haritalar'daki işletme kaydı (place_id ile) */
