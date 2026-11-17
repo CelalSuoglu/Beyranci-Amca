@@ -1064,6 +1064,14 @@ export function SiparisPageClient({
                 </p>
               ) : null}
 
+              {cartLines.length > 0 ? (
+                <p className="rounded-lg bg-white/[0.04] px-3 py-2 text-xs leading-relaxed text-[var(--foreground)]">
+                  <strong>“Siparişi onayla”</strong> butonuna bastığınızda{" "}
+                  <strong className="tabular-nums">{formatTry(subtotal)}</strong> tutarında ödeme yükümlülüğü
+                  altına girersiniz. Ödeme teslimatta kapıda alınır.
+                </p>
+              ) : null}
+
               {!signedIn ? (
                 <p className="text-xs leading-relaxed text-[var(--foreground-muted)]">
                   Üye olmadan sipariş verebilirsiniz.{" "}

@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { LegalSections } from "@/components/legal/LegalDocumentView";
 import { PrintButton } from "@/components/legal/PrintButton";
-import { mesafeliSatis, onBilgilendirme } from "@/lib/legal/documents";
+import { mesafeliSatis, onBilgilendirme, type LegalDoc } from "@/lib/legal/documents";
 import { PAYMENT_METHOD_LABELS, type PaymentMethod } from "@/lib/orders/constants";
 import { formatOrderTime, formatTry } from "@/lib/orders/format";
 import type { OrderItemRecord } from "@/lib/orders/types";
@@ -26,15 +26,17 @@ export default async function SozlesmePage({ params }: { params: Promise<{ token
   const { data: o } = await createAdminClient()
     .from("orders")
     .select(
-      "order_number, created_at, customer_name, phone, address, items, total, payment_method, cash_change_for, terms_version, terms_accepted_at, tracking_token",
+      "order_number, created_at, customer_name, phone, address, items, total, payment_method, cash_change_for, terms_version, terms_accepted_at, terms_snapshot, tracking_token",
     )
     .eq("tracking_token", token)
     .maybeSingle();
   if (!o) notFound();
 
   const items = (o.items ?? []) as OrderItemRecord[];
-  const obf = onBilgilendirme();
-  const mss = mesafeliSatis();
+  // Müşterinin onayladığı metin (kopya varsa); yoksa (eski siparişler) güncel metin
+  const snap = o.terms_snapshot as { obf?: LegalDoc; mss?: LegalDoc } | null;
+  const obf = snap?.obf ?? onBilgilendirme();
+  const mss = snap?.mss ?? mesafeliSatis();
 
   return (
     <main

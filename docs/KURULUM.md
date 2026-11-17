@@ -13,7 +13,8 @@ Sıra önemli. **Önce veritabanı, sonra web, sonra mobil.**
    - Son olarak **`supabase/migrations/20261117_store_settings.sql`**: sipariş açık/kapalı, çalışma saatleri,
      tahmini süre, duyuru; para üstü, servis tercihi, teslim saati, iptal nedeni; ürün görselleri.
    - **`20261118_order_terms.sql`**: siparişte onaylanan sözleşme sürümü ve zamanı.
-   - ✅ 16 Kasım 2026: dört dosya da canlı veritabanında çalıştırıldı.
+   - **`20261119_terms_snapshot.sql`**: onaylanan sözleşme metninin değişmez kopyası.
+   - ✅ 17 Kasım 2026: tüm dosyalar canlı veritabanında çalıştırıldı.
 
 ## Yasal metinler
 

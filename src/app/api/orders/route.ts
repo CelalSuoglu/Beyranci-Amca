@@ -8,6 +8,7 @@ import { notifyCustomerOrderReceived, notifyStaffNewOrder } from "@/lib/push";
 import { getStoreStatus } from "@/lib/store/hours";
 import { getStoreSettings } from "@/lib/store/server";
 import { LEGAL_VERSION } from "@/lib/legal";
+import { mesafeliSatis, onBilgilendirme } from "@/lib/legal/documents";
 
 export const runtime = "nodejs";
 
@@ -120,6 +121,8 @@ export async function POST(request: Request) {
       wants_cutlery: order.wantsCutlery,
       terms_version: LEGAL_VERSION,
       terms_accepted_at: new Date().toISOString(),
+      // Onaylanan metnin değişmez kopyası: metin ileride değişse de bu sipariş için aynen gösterilir
+      terms_snapshot: { version: LEGAL_VERSION, obf: onBilgilendirme(), mss: mesafeliSatis() },
     })
     .select(RETURN_FIELDS)
     .single();

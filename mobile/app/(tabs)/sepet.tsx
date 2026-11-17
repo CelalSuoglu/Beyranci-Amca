@@ -252,6 +252,10 @@ export default function CartScreen() {
       </Pressable>
 
       {error ? <Message>{error}</Message> : null}
+      <Text style={{ color: colors.foreground, fontSize: 13, lineHeight: 19, marginBottom: 10 }}>
+        <Text style={{ fontWeight: "700" }}>“Siparişi onayla”</Text> butonuna bastığınızda{" "}
+        <Text style={{ fontWeight: "700" }}>{formatTry(subtotal)}</Text> tutarında ödeme yükümlülüğü altına girersiniz. Ödeme teslimatta kapıda alınır.
+      </Text>
       <Button
         label={!store.status.open ? "Şu an sipariş alınmıyor" : sending ? "Gönderiliyor…" : `Siparişi onayla · ${formatTry(subtotal)}`}
         onPress={() => void submit()}
