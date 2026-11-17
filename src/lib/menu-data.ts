@@ -11,6 +11,8 @@ export type CardMenuItem = {
   descriptionList?: string[];
   /** Kalori (kcal) — yalnızca basılı menüde yazanlar */
   calories?: number;
+  /** Alerjen kodları (src/lib/allergens.ts) */
+  allergens?: string[];
   /** Ürün görseli (public/ altında yol veya tam URL) */
   image?: string;
 };
@@ -19,6 +21,7 @@ export type RowMenuItem = {
   name: string;
   price: string;
   calories?: number;
+  allergens?: string[];
   image?: string;
 };
 

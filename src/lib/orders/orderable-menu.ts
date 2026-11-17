@@ -1,4 +1,5 @@
 import { menuCategories } from "@/lib/menu-data";
+import { codeAllergensForName } from "@/lib/allergens";
 import { getProductModifiers, type SpiceLevel } from "./spice";
 
 export type OrderableProduct = {
@@ -17,6 +18,8 @@ export type OrderableProduct = {
   requiresSpice: boolean;
   /** Kalori (kcal); menüde yazmıyorsa yok */
   calories?: number;
+  /** Alerjen kodları */
+  allergens?: string[];
   /** Ürün görseli */
   imageUrl?: string;
 };
@@ -101,6 +104,7 @@ function buildProducts(): OrderableProduct[] {
           description:
             "description" in item ? item.description : undefined,
           calories: item.calories,
+          allergens: item.allergens ?? codeAllergensForName(item.name),
           imageUrl: item.image,
           unitPrice,
           spiceLevels: modifiers.spiceLevels,
@@ -122,6 +126,7 @@ function buildProducts(): OrderableProduct[] {
           categoryTitle: category.subSectionTitle ?? category.title,
           name: item.name,
           calories: item.calories,
+          allergens: item.allergens ?? codeAllergensForName(item.name),
           imageUrl: item.image,
           unitPrice,
           spiceLevels: modifiers.spiceLevels,

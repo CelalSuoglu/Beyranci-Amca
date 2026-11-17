@@ -10,6 +10,7 @@ import {
   type OrderableProduct,
 } from "@/lib/orders/orderable-menu";
 import { SPICE_LEVELS, type SpiceLevel } from "@/lib/orders/spice";
+import { codeAllergensForName, normalizeAllergens } from "@/lib/allergens";
 
 /** Supabase'deki ürün satırı */
 export type ProductRow = {
@@ -29,6 +30,8 @@ export type ProductRow = {
   requires_garlic: boolean;
   /** Kalori (kcal); 20261116 migration'ından önce bu kolon yoktur */
   calories?: number | null;
+  /** Alerjen kodları; 20261120 migration'ından önce bu kolon yoktur */
+  allergens?: string[] | null;
   image_url?: string | null;
 };
 
@@ -87,6 +90,7 @@ export function buildCatalog(categories: CategoryRow[], products: ProductRow[]):
       name: productDisplayName(p),
       price: formatPriceTl(Number(p.price)),
       calories: p.calories ?? undefined,
+      allergens: normalizeAllergens(p.allergens),
     }));
 
     if (cat.layout === "cards") {
@@ -105,6 +109,10 @@ export function buildCatalog(categories: CategoryRow[], products: ProductRow[]):
             groups.set(p.option_group, g);
             items.push(g);
           }
+          for (const a of normalizeAllergens(p.allergens)) {
+            g.allergens ??= [];
+            if (!g.allergens.includes(a)) g.allergens.push(a);
+          }
           g.options!.push({
             name: p.option_name ?? p.name,
             price: formatPriceTl(Number(p.price)),
@@ -116,6 +124,7 @@ export function buildCatalog(categories: CategoryRow[], products: ProductRow[]):
             description: p.description ?? undefined,
             descriptionList: p.description_list ?? undefined,
             calories: p.calories ?? undefined,
+            allergens: normalizeAllergens(p.allergens),
           });
         }
       }
@@ -134,6 +143,7 @@ export function buildCatalog(categories: CategoryRow[], products: ProductRow[]):
         name: productDisplayName(p),
         price: formatPriceTl(Number(p.price)),
         calories: p.calories ?? undefined,
+        allergens: normalizeAllergens(p.allergens),
       }));
       if (items.length || subItems.length) {
         menu.push({
@@ -161,6 +171,7 @@ export function buildCatalog(categories: CategoryRow[], products: ProductRow[]):
         requiresGarlic: p.requires_garlic,
         requiresSpice: spiceLevels !== null,
         calories: p.calories ?? undefined,
+        allergens: normalizeAllergens(p.allergens),
         imageUrl: p.image_url ?? undefined,
       });
     }
@@ -169,8 +180,21 @@ export function buildCatalog(categories: CategoryRow[], products: ProductRow[]):
   return { menu, orderable, source: "database" };
 }
 
+/** Kod menüsüne ürün adından kesin alerjenleri ekler */
+function withCodeAllergens(menu: MenuCategory[]): MenuCategory[] {
+  const tag = <T extends { name: string; allergens?: string[] }>(item: T): T => ({
+    ...item,
+    allergens: item.allergens ?? codeAllergensForName(item.name),
+  });
+  return menu.map((cat) =>
+    cat.layout === "cards"
+      ? { ...cat, items: cat.items.map(tag), subSectionItems: cat.subSectionItems?.map(tag) }
+      : { ...cat, items: cat.items.map(tag), subSectionItems: cat.subSectionItems?.map(tag) },
+  );
+}
+
 const codeCatalog: Catalog = {
-  menu: codeMenu,
+  menu: withCodeAllergens(codeMenu),
   orderable: [...codeProducts],
   source: "code",
 };

@@ -1,6 +1,7 @@
 import { API_URL } from "./api";
 import { supabase } from "./supabase";
 import type { SpiceLevel } from "./orders";
+import { normalizeAllergens } from "./allergens";
 
 export type Product = {
   id: string;
@@ -12,6 +13,8 @@ export type Product = {
   spiceLevels: SpiceLevel[] | null;
   requiresGarlic: boolean;
   calories: number | null;
+  /** Alerjen kodları (allergens.ts) */
+  allergens: string[];
   /** Tam adres (site üzerindeki görseller için API_URL eklenir) */
   imageUrl: string | null;
 };
@@ -26,7 +29,7 @@ export async function fetchCatalog(): Promise<CatalogCategory[]> {
     supabase.from("categories").select("id, title, sub_section_title, sort_order, is_active").order("sort_order"),
     supabase
       .from("products")
-      .select("id, category_id, name, option_group, option_name, description, price, sort_order, in_sub_section, is_active, is_orderable, spice_levels, requires_garlic, calories, image_url")
+      .select("id, category_id, name, option_group, option_name, description, price, sort_order, in_sub_section, is_active, is_orderable, spice_levels, requires_garlic, calories, allergens, image_url")
       .eq("is_active", true)
       .eq("is_orderable", true)
       .order("sort_order"),
@@ -59,6 +62,7 @@ export async function fetchCatalog(): Promise<CatalogCategory[]> {
             spiceLevels: levels.length ? levels : null,
             requiresGarlic: Boolean(p.requires_garlic),
             calories: p.calories == null ? null : Number(p.calories),
+            allergens: normalizeAllergens(p.allergens),
             imageUrl: resolveImage(p.image_url as string | null),
           };
         });

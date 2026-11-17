@@ -6,6 +6,7 @@ import { SectionHeading } from "@/components/ui/SectionHeading";
 import { Button } from "@/components/ui/Button";
 import { SurfaceCard } from "@/components/ui/SurfaceCard";
 import { MapPinIcon } from "@/components/icons/SocialIcons";
+import { MapEmbed } from "@/components/sections/MapEmbed";
 
 export function MapSection() {
   return (
@@ -72,14 +73,7 @@ export function MapSection() {
                 "shadow-[0_24px_56px_-16px_rgba(0,0,0,0.55)] ring-1 ring-[#d4af37]/12",
               )}
             >
-              <iframe
-                title="Beyrancı Amca — Google Haritalar"
-                src={site.mapsEmbedSrc}
-                className="aspect-[4/3] min-h-[260px] w-full border-0 sm:aspect-[16/10] sm:min-h-[320px] lg:min-h-[380px]"
-                loading="lazy"
-                referrerPolicy="no-referrer-when-downgrade"
-                allowFullScreen
-              />
+              <MapEmbed title="Beyrancı Amca — Google Haritalar" src={site.mapsEmbedSrc} />
             </div>
           </div>
         </div>

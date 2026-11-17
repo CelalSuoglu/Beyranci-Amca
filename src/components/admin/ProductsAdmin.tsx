@@ -6,6 +6,7 @@ import { Alert, Card, fieldClass } from "@/components/account/ui";
 import { createClient } from "@/lib/supabase/client";
 import { formatTry } from "@/lib/orders/format";
 import { cn } from "@/lib/utils";
+import { ALLERGENS, allergenShortLabels, normalizeAllergens } from "@/lib/allergens";
 import {
   SPICE_PRESETS,
   revalidateMenu,
@@ -23,6 +24,7 @@ type Draft = {
   description: string;
   price: string;
   calories: string;
+  allergens: string[];
   image_url: string;
   is_active: boolean;
   is_orderable: boolean;
@@ -37,6 +39,7 @@ const emptyDraft = (categoryId: string): Draft => ({
   description: "",
   price: "",
   calories: "",
+  allergens: [],
   image_url: "",
   is_active: true,
   is_orderable: true,
@@ -98,6 +101,7 @@ export function ProductsAdmin() {
       description: p.description ?? "",
       price: String(p.price).replace(".", ","),
       calories: p.calories ? String(p.calories) : "",
+      allergens: normalizeAllergens(p.allergens),
       image_url: p.image_url ?? "",
       is_active: p.is_active,
       is_orderable: p.is_orderable,
@@ -147,6 +151,7 @@ export function ProductsAdmin() {
       description: draft.description.trim() || null,
       price,
       calories,
+      allergens: normalizeAllergens(draft.allergens),
       image_url: img || null,
       is_active: draft.is_active,
       is_orderable: draft.is_orderable,
@@ -259,6 +264,29 @@ export function ProductsAdmin() {
               Açıklama (isteğe bağlı)
               <textarea rows={2} value={draft.description} onChange={(e) => setDraft({ ...draft, description: e.target.value })} className={cn(fieldClass, "resize-y")} />
             </label>
+            <fieldset className="sm:col-span-2">
+              <legend className="text-sm font-medium">Alerjenler</legend>
+              <p className="mt-1 text-xs text-[var(--foreground-muted)]">
+                Tarifte bulunan alerjenleri işaretleyin. Bu bilgi menüde ve siparişte müşteriye gösterilir; yanlış veya eksik bilgi yasal sorumluluk doğurur, mutfakla birlikte kontrol edin.
+              </p>
+              <div className="mt-2 grid grid-cols-1 gap-x-6 gap-y-2 text-sm min-[480px]:grid-cols-2">
+                {ALLERGENS.map((a) => (
+                  <Check
+                    key={a.code}
+                    label={a.label}
+                    checked={draft.allergens.includes(a.code)}
+                    onChange={(v) =>
+                      setDraft({
+                        ...draft,
+                        allergens: v
+                          ? [...draft.allergens, a.code]
+                          : draft.allergens.filter((x) => x !== a.code),
+                      })
+                    }
+                  />
+                ))}
+              </div>
+            </fieldset>
             <div className="flex flex-wrap gap-x-6 gap-y-3 text-sm sm:col-span-2">
               <Check label="Menüde göster" checked={draft.is_active} onChange={(v) => setDraft({ ...draft, is_active: v })} />
               <Check label="Paket siparişte satılsın" checked={draft.is_orderable} onChange={(v) => setDraft({ ...draft, is_orderable: v })} />
@@ -291,6 +319,7 @@ export function ProductsAdmin() {
                       {p.requires_garlic ? "Sarımsak seçimli · " : ""}
                       {p.in_sub_section ? "Alt bölüm · " : ""}
                       {p.calories ? `${p.calories} kcal · ` : ""}
+                      {p.allergens?.length ? `Alerjen: ${allergenShortLabels(p.allergens).join(", ")} · ` : "Alerjen girilmedi · "}
                       <span className="tabular-nums text-[#e8c76a]">{formatTry(p.price)}</span>
                     </p>
                   </div>

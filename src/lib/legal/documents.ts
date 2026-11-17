@@ -207,7 +207,7 @@ export function gizlilik(): LegalDoc {
       {
         heading: "Aktarım",
         paragraphs: [
-          "Verileriniz yalnızca hizmetin yürütülmesi için gerekli olduğu ölçüde, altyapı hizmeti aldığımız tedarikçilere aktarılır: barındırma (Vercel Inc.), veritabanı ve kimlik doğrulama (Supabase Inc.), uygulama bildirimleri (Expo / 650 Industries Inc.), adres doğrulama (OpenStreetMap Nominatim ve Photon) ve onay vermeniz halinde Google Analytics (Google LLC). Bu hizmetlerin sunucuları yurt dışında (ABD ve AB) bulunduğundan veriler KVKK m.9 kapsamında, Kanun'da öngörülen uygun güvenceler çerçevesinde yurt dışına aktarılmaktadır.",
+          "Verileriniz yalnızca hizmetin yürütülmesi için gerekli olduğu ölçüde, altyapı hizmeti aldığımız tedarikçilere aktarılır: barındırma (Vercel Inc.), veritabanı ve kimlik doğrulama (Supabase Inc.), uygulama bildirimleri (Expo / 650 Industries Inc.), adres doğrulama (OpenStreetMap Nominatim ve Photon) onay vermeniz halinde Google Analytics ve konum haritasını görüntülemeyi seçmeniz halinde Google Haritalar (Google LLC). Bu hizmetlerin sunucuları yurt dışında (ABD ve AB) bulunduğundan veriler KVKK m.9 kapsamında, Kanun'da öngörülen uygun güvenceler çerçevesinde yurt dışına aktarılmaktadır.",
           "Kanunen yetkili kamu kurum ve kuruluşlarına talep halinde ve mevzuatın gerektirdiği ölçüde aktarım yapılabilir. Verileriniz satılmaz ve reklam amacıyla üçüncü kişilerle paylaşılmaz.",
         ],
       },
@@ -268,6 +268,12 @@ export function cerezPolitikasi(): LegalDoc {
         ],
         paragraphs: [
           "Analiz çerezleri, “Kabul et” seçeneğini işaretlemediğiniz sürece yüklenmez. Reklam veya yeniden hedefleme çerezi kullanmıyoruz.",
+        ],
+      },
+      {
+        heading: "Üçüncü taraf içerik: Google Haritalar",
+        paragraphs: [
+          "Ana sayfadaki konum haritası Google LLC tarafından sağlanır. Harita, siz “Haritayı göster” düğmesine basmadan yüklenmez; yüklendiğinde Google kendi çerezlerini yerleştirebilir ve IP adresiniz gibi verileri kendi gizlilik politikasına göre işleyebilir. “Her zaman göster” seçeneğinde bu tercih tarayıcınızda saklanır; tarayıcı verilerini silerek geri alabilirsiniz.",
         ],
       },
       {

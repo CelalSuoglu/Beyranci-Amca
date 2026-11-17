@@ -12,6 +12,7 @@ import {
   type SpiceLevel,
 } from "../../src/lib/orders";
 import { colors } from "../../src/theme";
+import { ALLERGEN_NOTICE, allergenShortLabels } from "../../src/lib/allergens";
 
 export default function ProductScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -46,6 +47,12 @@ export default function ProductScreen() {
         {product.calories ? <Text style={{ color: colors.muted, fontSize: 14, fontWeight: "400" }}>  ·  {product.calories} kcal</Text> : null}
       </Text>
       {product.description ? <Text style={{ color: colors.muted, marginTop: 10, lineHeight: 21 }}>{product.description}</Text> : null}
+      {product.allergens.length ? (
+        <Text style={{ color: colors.accentSoft, marginTop: 10, fontSize: 13 }}>
+          Alerjen: {allergenShortLabels(product.allergens).join(", ")}
+        </Text>
+      ) : null}
+      <Text style={{ color: colors.muted, marginTop: 8, fontSize: 12, lineHeight: 18 }}>{ALLERGEN_NOTICE}</Text>
 
       {product.spiceLevels ? (
         <Card style={{ marginTop: 18 }}>

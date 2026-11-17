@@ -14,6 +14,7 @@ Sıra önemli. **Önce veritabanı, sonra web, sonra mobil.**
      tahmini süre, duyuru; para üstü, servis tercihi, teslim saati, iptal nedeni; ürün görselleri.
    - **`20261118_order_terms.sql`**: siparişte onaylanan sözleşme sürümü ve zamanı.
    - **`20261119_terms_snapshot.sql`**: onaylanan sözleşme metninin değişmez kopyası.
+   - **`20261120_allergens.sql`**: ürün alerjenleri (14 grup). Yalnızca kesin olanlar (hamur → gluten, kaşar/ayran → süt) dolduruldu; çorbalar ve diğer tarif ayrıntıları mutfakla kontrol edilip /yonetim → Ürünler'den işaretlenmeli.
    - ✅ 17 Kasım 2026: tüm dosyalar canlı veritabanında çalıştırıldı.
 
 ## Yasal metinler

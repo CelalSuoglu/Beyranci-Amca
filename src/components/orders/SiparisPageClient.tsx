@@ -28,6 +28,8 @@ import {
   type SpiceLevel,
 } from "@/lib/orders/spice";
 import { site } from "@/lib/site";
+import { ALLERGEN_NOTICE } from "@/lib/allergens";
+import { AllergenTags } from "@/components/menu/AllergenTags";
 import { cn } from "@/lib/utils";
 
 type CartLine = {
@@ -626,6 +628,10 @@ export function SiparisPageClient({
             </div>
           </nav>
 
+          <p className="rounded-xl border border-[#c2410c]/30 bg-[#c2410c]/10 px-3.5 py-2.5 text-xs leading-relaxed text-[#fde6d2] sm:text-sm">
+            {ALLERGEN_NOTICE} Fiyatlara KDV dahildir; teslimat ve servis ücreti alınmaz.
+          </p>
+
           {categories.map((category) => (
             <div
               key={category.id}
@@ -664,6 +670,7 @@ export function SiparisPageClient({
                                 {product.calories} kcal
                               </span>
                             ) : null}
+                            <AllergenTags codes={product.allergens} />
                           </h4>
                           {product.description ? (
                             <p className="mt-1.5 break-words text-sm leading-relaxed text-[var(--foreground-muted)]">

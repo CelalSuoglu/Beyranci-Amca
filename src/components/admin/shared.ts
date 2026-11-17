@@ -22,6 +22,7 @@ export type AdminProduct = {
   spice_levels: string[] | null;
   requires_garlic: boolean;
   calories: number | null;
+  allergens?: string[] | null;
   image_url: string | null;
 };
 

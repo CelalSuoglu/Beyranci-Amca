@@ -3,6 +3,7 @@ import { getCatalog } from "@/lib/menu/catalog";
 import { site } from "@/lib/site";
 import { brand } from "@/lib/brand";
 import { cn } from "@/lib/utils";
+import { AllergenTags, MenuLegalNote } from "@/components/menu/AllergenTags";
 
 function QrCategoryTitle({
   title,
@@ -50,6 +51,7 @@ function QrMenuCard({
   description,
   descriptionList,
   calories,
+  allergens,
 }: {
   name: string;
   price?: string;
@@ -57,6 +59,7 @@ function QrMenuCard({
   description?: string;
   descriptionList?: string[];
   calories?: number;
+  allergens?: string[];
 }) {
   return (
     <article
@@ -68,6 +71,7 @@ function QrMenuCard({
         <h3 className="min-w-0 flex-1 text-left text-[1.0625rem] font-semibold leading-snug tracking-tight text-[#f5f0e8] sm:text-lg">
           {name}
           <Kcal value={calories} />
+          <AllergenTags codes={allergens} />
         </h3>
         {price ? (
           <p className="shrink-0 whitespace-nowrap text-right text-[1.0625rem] font-semibold tabular-nums tracking-tight text-[#e8c76a] sm:min-w-[6rem] sm:text-lg">
@@ -111,12 +115,23 @@ function QrMenuCard({
   );
 }
 
-function QrMenuRow({ name, price, calories }: { name: string; price: string; calories?: number }) {
+function QrMenuRow({
+  name,
+  price,
+  calories,
+  allergens,
+}: {
+  name: string;
+  price: string;
+  calories?: number;
+  allergens?: string[];
+}) {
   return (
     <div className="flex min-h-[3.5rem] items-center justify-between gap-4 border-b border-white/[0.06] py-4 last:border-b-0 last:pb-0">
       <span className="min-w-0 flex-1 text-[1.0625rem] font-medium leading-snug tracking-tight text-[#ebe4dc]">
         {name}
         <Kcal value={calories} />
+          <AllergenTags codes={allergens} />
       </span>
       <span className="shrink-0 min-w-[5.25rem] text-right text-[1.0625rem] font-semibold tabular-nums tracking-tight text-[#d4af37]">
         {price}
@@ -186,6 +201,7 @@ export default async function QrMenuPage() {
                         description={item.description}
                         descriptionList={item.descriptionList}
                         calories={item.calories}
+                        allergens={item.allergens}
                       />
                     ))}
                   </div>
@@ -206,6 +222,7 @@ export default async function QrMenuPage() {
                           name={item.name}
                           price={getSafePrice(item.price)}
                           calories={item.calories}
+                          allergens={item.allergens}
                         />
                       ))}
                     </div>
@@ -261,6 +278,7 @@ export default async function QrMenuPage() {
                           name={item.name}
                           price={getSafePrice(item.price)}
                           calories={item.calories}
+                          allergens={item.allergens}
                         />
                       ))}
                     </div>
@@ -270,6 +288,8 @@ export default async function QrMenuPage() {
             </section>
           ))}
         </main>
+
+        <MenuLegalNote className="mt-12" />
 
         <p className="mt-16 text-center font-[family-name:var(--font-display)] text-sm font-medium italic tracking-[0.12em] text-[#d4af37]/55 sm:mt-20">
           Afiyet olsun

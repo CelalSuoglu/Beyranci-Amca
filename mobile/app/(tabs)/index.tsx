@@ -8,6 +8,7 @@ import { StoreBanner } from "../../src/components/StoreBanner";
 import { useStore } from "../../src/lib/useStore";
 import { MIN_ORDER_TOTAL_TL, MAX_DELIVERY_KM, formatTry } from "../../src/lib/orders";
 import { colors } from "../../src/theme";
+import { allergenShortLabels } from "../../src/lib/allergens";
 
 export default function MenuScreen() {
   const { catalog, catalogLoading, catalogError, reloadCatalog, count, subtotal } = useCart();
@@ -92,6 +93,9 @@ export default function MenuScreen() {
                 {item.name}
                 {item.calories ? <Text style={s.kcal}>  {item.calories} kcal</Text> : null}
               </Text>
+              {item.allergens.length ? (
+                <Text style={s.allergen}>Alerjen: {allergenShortLabels(item.allergens).join(", ")}</Text>
+              ) : null}
               {item.description ? (
                 <Text style={s.itemDesc} numberOfLines={2}>
                   {item.description}
@@ -149,6 +153,7 @@ const s = StyleSheet.create({
   kcal: { color: colors.muted, fontSize: 12, fontWeight: "400" },
   itemDesc: { color: colors.muted, fontSize: 13, marginTop: 4, lineHeight: 18 },
   itemTag: { color: colors.accentSoft, fontSize: 12, marginTop: 6 },
+  allergen: { color: colors.accentSoft, fontSize: 12, marginTop: 3 },
   price: { color: colors.goldLight, fontWeight: "700", fontSize: 15 },
   plus: { width: 34, height: 34, borderRadius: 17, borderWidth: 1, borderColor: "rgba(212,175,55,0.5)", alignItems: "center", justifyContent: "center" },
   plusText: { color: colors.goldPale, fontSize: 20, lineHeight: 22 },

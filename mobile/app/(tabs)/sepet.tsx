@@ -251,6 +251,14 @@ export default function CartScreen() {
         </Text>
       </Pressable>
 
+      <Text style={{ color: colors.muted, fontSize: 12, lineHeight: 18, marginBottom: 12 }}>
+        Kişisel verileriniz siparişinizin teslimi için işlenir:{" "}
+        <Text onPress={() => void Linking.openURL(`${API_URL}/gizlilik`)} style={{ color: colors.accentSoft, textDecorationLine: "underline" }}>
+          KVKK Aydınlatma Metni
+        </Text>
+        . Fiyatlara KDV dahildir; teslimat ve servis ücreti alınmaz.
+      </Text>
+
       {error ? <Message>{error}</Message> : null}
       <Text style={{ color: colors.foreground, fontSize: 13, lineHeight: 19, marginBottom: 10 }}>
         <Text style={{ fontWeight: "700" }}>“Siparişi onayla”</Text> butonuna bastığınızda{" "}

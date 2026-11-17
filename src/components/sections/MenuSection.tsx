@@ -1,4 +1,5 @@
 import { cn } from "@/lib/utils";
+import { AllergenTags, MenuLegalNote } from "@/components/menu/AllergenTags";
 import { section, card } from "@/lib/site-styles";
 import { Container } from "@/components/ui/Container";
 import { SectionHeading } from "@/components/ui/SectionHeading";
@@ -34,6 +35,7 @@ function MenuCard({
   description,
   descriptionList,
   calories,
+  allergens,
 }: {
   name: string;
   price?: string;
@@ -41,6 +43,7 @@ function MenuCard({
   description?: string;
   descriptionList?: string[];
   calories?: number;
+  allergens?: string[];
 }) {
   return (
     <article
@@ -54,6 +57,7 @@ function MenuCard({
         <h4 className="min-w-0 flex-1 font-[family-name:var(--font-display)] text-lg font-semibold leading-snug text-[var(--foreground)] transition-colors group-hover:text-[#fde68a] sm:text-xl">
           {name}
           <Kcal value={calories} />
+          <AllergenTags codes={allergens} />
         </h4>
         {price ? (
           <p className="shrink-0 font-semibold tabular-nums tracking-tight text-[#e8c76a] sm:pt-0.5 sm:text-right">
@@ -97,7 +101,17 @@ function MenuCard({
   );
 }
 
-function MenuRow({ name, price, calories }: { name: string; price: string; calories?: number }) {
+function MenuRow({
+  name,
+  price,
+  calories,
+  allergens,
+}: {
+  name: string;
+  price: string;
+  calories?: number;
+  allergens?: string[];
+}) {
   return (
     <div className="group relative flex min-h-[3rem] items-baseline justify-between gap-4 border-b border-white/[0.06] py-3.5 first:pt-0 last:border-0 last:pb-0 sm:gap-8">
       <div
@@ -107,6 +121,7 @@ function MenuRow({ name, price, calories }: { name: string; price: string; calor
       <span className="relative min-w-0 flex-1 text-[0.9375rem] font-medium leading-snug text-[#ebe4dc] transition-colors group-hover:text-[var(--foreground)] sm:text-base">
         {name}
         <Kcal value={calories} />
+          <AllergenTags codes={allergens} />
       </span>
       <span className="relative shrink-0 font-semibold tabular-nums text-[#d4af37]/95">
         {price}
@@ -146,6 +161,7 @@ export function MenuSection({
                         description={item.description}
                         descriptionList={item.descriptionList}
                         calories={item.calories}
+                        allergens={item.allergens}
                       />
                     ))}
                   </div>
@@ -166,6 +182,7 @@ export function MenuSection({
                           name={item.name}
                           price={item.price}
                           calories={item.calories}
+                          allergens={item.allergens}
                         />
                       ))}
                     </div>
@@ -221,6 +238,7 @@ export function MenuSection({
                           name={item.name}
                           price={item.price}
                           calories={item.calories}
+                          allergens={item.allergens}
                         />
                       ))}
                     </div>
@@ -230,6 +248,7 @@ export function MenuSection({
             </div>
           ))}
         </div>
+        <MenuLegalNote className="mt-12 sm:mt-16" />
       </Container>
     </section>
   );
