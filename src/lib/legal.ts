@@ -11,22 +11,23 @@ export const BUSINESS = {
   /** Marka adı */
   tradeName: site.name,
   /** Vergi levhasındaki unvan (şahıs işletmesinde ad soyad + işletme adı). Örn. "Ahmet Yılmaz - Beyrancı Amca" */
-  legalName: "",
-  taxOffice: "",
-  taxNumber: "",
+  legalName: "Eminence Mimarlık İnşaat Kafe Restoran Ticaret İthalat İhracat Limited Şirketi",
+  taxOffice: "Antalya Kurumlar",
+  taxNumber: "3341315303",
   /** Şirketse MERSİS numarası (şahıs işletmesinde boş bırakılabilir) */
-  mersisNo: "",
-  address: site.address,
+  mersisNo: "0334131530300001",
+  /** Vergi levhasındaki iş yeri adresi */
+  address: "Yeşilbayır Mah. Atatürk Cad. No:72 İç Kapı No: A, 07190 Döşemealtı/Antalya",
   phone: site.phoneDisplay ?? "",
   /** Müşteri ve KVKK başvuruları için e-posta */
-  email: "",
+  email: "amcabeyranci@gmail.com",
   /** Varsa KEP adresi (KVKK başvuruları için) */
   kep: "",
 } as const;
 
 /** Yasal metinlerin sürümü — değiştirdiğinizde güncelleyin (siparişlere kaydedilir) */
-export const LEGAL_VERSION = "2026-11-16";
-export const LEGAL_UPDATED_LABEL = "16 Kasım 2026";
+export const LEGAL_VERSION = "2026-11-17";
+export const LEGAL_UPDATED_LABEL = "17 Kasım 2026";
 
 export function sellerDisplayName(): string {
   return BUSINESS.legalName || BUSINESS.tradeName;

@@ -50,7 +50,7 @@ export function RestaurantJsonLd() {
       longitude: 30.6058462,
     },
     hasMap: site.googleMapsOpenUrl,
-    sameAs: [site.instagramUrl.split("?")[0], site.googleMapsOpenUrl],
+    sameAs: [site.instagramUrl.split("?")[0], site.googleMapsOpenUrl, site.appleMapsOpenUrl],
     ...(openingHoursSpecification
       ? { openingHoursSpecification }
       : {}),

@@ -53,14 +53,24 @@ export function ContactSection() {
                 <p className="mt-3 text-[15px] leading-relaxed text-[#e8e0d8]">
                   {site.address}
                 </p>
-                <a
-                  href={site.googleMapsOpenUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="mt-5 inline-flex text-sm font-medium text-[#fde68a] underline-offset-4 transition hover:text-[#fef3c7] hover:underline"
-                >
-                  Haritada aç →
-                </a>
+                <div className="mt-5 flex flex-wrap gap-x-5 gap-y-2">
+                  <a
+                    href={site.googleMapsOpenUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex text-sm font-medium text-[#fde68a] underline-offset-4 transition hover:text-[#fef3c7] hover:underline"
+                  >
+                    Google Haritalar →
+                  </a>
+                  <a
+                    href={site.appleMapsOpenUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex text-sm font-medium text-[#fde68a] underline-offset-4 transition hover:text-[#fef3c7] hover:underline"
+                  >
+                    Apple Haritalar →
+                  </a>
+                </div>
               </div>
             </div>
           </SurfaceCard>

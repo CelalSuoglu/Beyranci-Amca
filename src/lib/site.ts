@@ -25,6 +25,8 @@ export type SiteConfig = {
     weekly: readonly HoursRow[] | null;
   };
   googleMapsOpenUrl: string;
+  /** Apple Haritalar'daki işletme kaydı (iPhone'da Haritalar uygulamasını açar) */
+  appleMapsOpenUrl: string;
   mapsEmbedSrc: string;
 };
 
@@ -65,6 +67,8 @@ export const site: SiteConfig = {
   /** Google Haritalar'daki işletme kaydı (place_id ile) */
   googleMapsOpenUrl:
     "https://www.google.com/maps/search/?api=1&query=BEYRANCI%20AMCA%20D%C3%B6%C5%9Femealt%C4%B1%20Antalya&query_place_id=ChIJP9eq6y6NwxQRukYgwDkgqdM",
+  appleMapsOpenUrl:
+    "https://maps.apple.com/place?place-id=I45323701306C12E4&name=Beyranc%C4%B1%20Amca&coordinate=36.981842%2C30.605889&address=Atat%C3%BCrk%20Cd.%2072%2C%2007190%20D%C3%B6%C5%9Femealt%C4%B1%20Antalya%2C%20T%C3%BCrkiye",
   /** İşletme adıyla arama: haritada "BEYRANCI AMCA" kartı ve yorumları görünür */
   mapsEmbedSrc:
     "https://www.google.com/maps?q=BEYRANCI%20AMCA%2C%20Atat%C3%BCrk%20Cd.%20No%3A72%2C%20Ye%C5%9Filbay%C4%B1r%2C%2007190%20D%C3%B6%C5%9Femealt%C4%B1/Antalya&hl=tr&z=17&output=embed",

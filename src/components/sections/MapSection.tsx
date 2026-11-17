@@ -42,15 +42,26 @@ export function MapSection() {
                   </p>
                 </div>
               </div>
-              <Button
-                href={site.googleMapsOpenUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                variant="primary"
-                className="mt-8 w-full justify-center shadow-lg shadow-[#9a3412]/25 sm:w-auto"
-              >
-                Google Maps&apos;te Aç
-              </Button>
+              <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+                <Button
+                  href={site.googleMapsOpenUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  variant="primary"
+                  className="w-full justify-center shadow-lg shadow-[#9a3412]/25 sm:w-auto"
+                >
+                  Google Maps&apos;te Aç
+                </Button>
+                <Button
+                  href={site.appleMapsOpenUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  variant="outline"
+                  className="w-full justify-center sm:w-auto"
+                >
+                  Apple Haritalar&apos;da Aç
+                </Button>
+              </div>
             </SurfaceCard>
           </div>
 
